@@ -217,10 +217,12 @@ p {
   justify-content: flex-start;
   width: fit-content;
   border: 1px solid var(--border);
+  border-radius: 4px;
   background: var(--bg);
   color: var(--text);
-  padding: 0.5rem 0.9rem;
-  font-size: var(--size-small);
+  padding: 0.75rem 1.25rem;
+  font-size: 0.95rem;
+  font-weight: 500;
   line-height: 1;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -234,11 +236,18 @@ p {
 }
 
 .about-card {
-  border: 1px solid var(--border);
   background: var(--surface);
   padding: 1rem;
   display: grid;
   gap: 0.7rem;
+}
+
+.about-card:first-child {
+  padding-left: 0;
+}
+
+.about-card:nth-child(2) {
+  padding-left: 0.5rem;
 }
 
 .about-contact-row {
@@ -248,8 +257,10 @@ p {
 .small-button {
   display: inline-block;
   border: 1px solid var(--border);
-  padding: 0.4rem 0.75rem;
-  font-size: var(--size-small);
+  border-radius: 4px;
+  padding: 0.65rem 1.1rem;
+  font-size: 0.95rem;
+  font-weight: 500;
   color: var(--text);
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -270,17 +281,23 @@ p {
   gap: 0.7rem;
 }
 
+.reel-action {
+  margin-top: 2rem;
+}
+
 .reel-button {
   display: inline-flex;
   align-items: center;
   justify-content: flex-start;
   width: fit-content;
   border: 1px solid var(--border);
+  border-radius: 4px;
   background: var(--bg);
   color: var(--text);
-  padding: 0.55rem 0.95rem;
+  padding: 0.75rem 1.25rem;
   font-family: var(--font-body);
-  font-size: var(--size-small);
+  font-size: 0.95rem;
+  font-weight: 500;
   line-height: 1;
   cursor: pointer;
   letter-spacing: 0.06em;
@@ -330,11 +347,13 @@ p {
 
 .window-close {
   border: 1px solid var(--border);
+  border-radius: 4px;
   background: var(--bg);
   color: var(--text);
-  padding: 0.4rem 0.8rem;
+  padding: 0.65rem 1.15rem;
   font-family: var(--font-body);
-  font-size: var(--size-small);
+  font-size: 0.95rem;
+  font-weight: 500;
   line-height: 1;
   cursor: pointer;
   letter-spacing: 0.06em;
@@ -355,15 +374,36 @@ p {
 
 .project-stack {
   display: grid;
-  gap: 1rem;
+  gap: 0;
+}
+
+.projects-section {
+  padding-block: 0;
+  border-top: 0;
+  border-bottom: 0;
+  background: var(--surface);
 }
 
 .project-card {
-  min-height: clamp(14rem, 40vh, 30rem);
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.project-card:first-child {
+  border-top: 0;
+}
+
+.project-card:last-child {
+  border-bottom: 1px solid var(--border);
+}
+
+.project-card-inner {
+  min-height: calc(clamp(14rem, 40vh, 30rem) + 200px);
   display: grid;
-  align-content: start;
-  gap: 0.7rem;
+  align-content: center;
   justify-items: start;
+  gap: 0.7rem;
+  transform: translateY(-10%);
 }
 
 .project-card h3 {
@@ -377,11 +417,13 @@ p {
   justify-content: flex-start;
   width: fit-content;
   border: 1px solid var(--border);
+  border-radius: 4px;
   background: var(--bg);
   color: var(--text);
-  padding: 0.55rem 0.95rem;
+  padding: 0.75rem 1.25rem;
   font-family: var(--font-body);
-  font-size: var(--size-small);
+  font-size: 0.95rem;
+  font-weight: 500;
   line-height: 1;
   cursor: pointer;
   letter-spacing: 0.06em;
@@ -452,9 +494,9 @@ p {
   }
 
   .reel-shell,
-  .project-card,
+  .project-card-inner,
   .window-panel {
-    min-height: clamp(12rem, 35vh, 22rem);
+    min-height: calc(clamp(12rem, 35vh, 22rem) + 200px);
   }
 }
 

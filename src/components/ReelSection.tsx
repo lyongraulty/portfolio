@@ -6,7 +6,7 @@ export function ReelSection() {
     <Section id="reel" size="medium" className="reel-section" aria-labelledby="reel-heading">
       <article className="reel-shell">
         <h2 id="reel-heading">MOTION REEL</h2>
-        <p>
+        <p className="reel-action">
           <Link className="reel-button" href="/reel">
             View Reel
           </Link>

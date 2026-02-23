@@ -4,7 +4,7 @@ import { workItems } from "@/lib/work";
 
 export function ProjectsSection() {
   return (
-    <Section id="projects" size="large" aria-label="Projects">
+    <Section id="projects" size="medium" fullBleed className="projects-section" aria-label="Projects">
       <div className="project-stack">
         {workItems.map((project, index) => (
           <ProjectCard
