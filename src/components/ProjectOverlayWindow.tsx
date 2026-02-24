@@ -7,6 +7,7 @@ type ProjectOverlayWindowProps = {
   title: string;
   description: string;
   index: number;
+  onClose?: () => void;
 };
 
 function formatIndex(index: number) {
@@ -21,36 +22,32 @@ function closeToPreviousOrHome(router: ReturnType<typeof useRouter>) {
   }
 }
 
-export function ProjectOverlayWindow({ title, description, index }: ProjectOverlayWindowProps) {
+export function ProjectOverlayWindow({ title, description, index, onClose }: ProjectOverlayWindowProps) {
   const router = useRouter();
+  const handleClose = onClose ?? (() => closeToPreviousOrHome(router));
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         event.preventDefault();
-        closeToPreviousOrHome(router);
+        handleClose();
       }
     };
 
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [router]);
+  }, [handleClose]);
 
   const handleBackdropClick = (event: MouseEvent<HTMLDivElement>) => {
     if (event.target === event.currentTarget) {
-      closeToPreviousOrHome(router);
+      handleClose();
     }
   };
 
   return (
     <div className="window-overlay" role="dialog" aria-modal="true" aria-label={title} onClick={handleBackdropClick}>
       <div className="window-panel">
-        <button
-          type="button"
-          className="window-close"
-          onClick={() => closeToPreviousOrHome(router)}
-          aria-label="Close project"
-        >
+        <button type="button" className="window-close" onClick={handleClose} aria-label="Close project">
           Close
         </button>
         <p className="reel-label">PROJECT</p>

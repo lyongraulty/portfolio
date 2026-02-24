@@ -270,6 +270,27 @@ p {
   letter-spacing: 0.06em;
   text-transform: uppercase;
   text-align: left;
+  transition: background-color 150ms ease, color 150ms ease, border-color 150ms ease;
+}
+
+.hero-inquiries-button:hover,
+.hero-inquiries-button:focus-visible,
+.small-button:hover,
+.small-button:focus-visible,
+.reel-button:hover,
+.reel-button:focus-visible,
+.project-button:hover,
+.project-button:focus-visible,
+.window-close:hover,
+.window-close:focus-visible {
+  background: #ffffff;
+  color: #000000;
+}
+
+.button-invert:hover,
+.button-invert:focus-visible {
+  background: #000000;
+  color: #ffffff;
 }
 
 .about-grid {
@@ -309,6 +330,7 @@ p {
   letter-spacing: 0.06em;
   text-transform: uppercase;
   text-align: left;
+  transition: background-color 150ms ease, color 150ms ease, border-color 150ms ease;
 }
 
 .reel-section {
@@ -392,6 +414,7 @@ p {
   letter-spacing: 0.06em;
   text-transform: uppercase;
   text-align: left;
+  transition: background-color 150ms ease, color 150ms ease, border-color 150ms ease;
 }
 
 .reel-label {
@@ -413,16 +436,18 @@ p {
 .window-overlay {
   position: fixed;
   inset: 0;
-  background: color-mix(in srgb, var(--bg) 92%, black 8%);
+  background: rgba(6, 6, 8, 0.86);
   display: grid;
   place-items: center;
-  z-index: 40;
+  z-index: 2000;
   padding: 1rem;
+  overflow: auto;
 }
 
 .window-panel {
   width: min(900px, 100%);
   min-height: 70vh;
+  max-height: calc(100vh - 2rem);
   border: 1px solid var(--border);
   background: var(--surface);
   border-radius: 8px;
@@ -432,6 +457,7 @@ p {
   align-content: start;
   justify-items: start;
   gap: 0.75rem;
+  overflow-y: auto;
 }
 
 .window-close {
@@ -448,6 +474,7 @@ p {
   letter-spacing: 0.06em;
   text-transform: uppercase;
   text-align: left;
+  transition: background-color 150ms ease, color 150ms ease, border-color 150ms ease;
 }
 
 .centered-copy {
@@ -527,6 +554,7 @@ p {
   letter-spacing: 0.06em;
   text-transform: uppercase;
   text-align: left;
+  transition: background-color 150ms ease, color 150ms ease, border-color 150ms ease;
 }
 
 .info-copy {
@@ -611,6 +639,11 @@ p {
   display: grid;
   align-content: start;
   gap: 0.7rem;
+}
+
+.sandbox-inner h2,
+.music-dark-inner h2 {
+  margin-bottom: 1em;
 }
 
 .music-section-dark {

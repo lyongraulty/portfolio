@@ -1,5 +1,5 @@
-import Link from "next/link";
 import { Container } from "@/components/Container";
+import { ModalLink } from "@/components/ModalLink";
 
 type ProjectCardProps = {
   slug: string;
@@ -33,9 +33,9 @@ export function ProjectCard({ slug, index, title, description, media }: ProjectC
       <Container className="project-card-inner">
         <h3>{title}</h3>
         <p>
-          <Link className="project-button" href={`/work/${slug}`}>
+          <ModalLink className="project-button" modal="project" slug={slug}>
             View Project
-          </Link>
+          </ModalLink>
         </p>
         <p className="project-index">{formatIndex(index)}.</p>
         <p className="project-divider">-</p>

@@ -1,5 +1,5 @@
-import Link from "next/link";
 import { Section } from "@/components/Section";
+import { ModalLink } from "@/components/ModalLink";
 
 export function HeroSection() {
   return (
@@ -21,9 +21,9 @@ export function HeroSection() {
         <div className="hero-content">
           <h1 id="intro-heading">LYON GRAULTY</h1>
           <p className="hero-subtitle">2D &amp; 3D MOTION DESIGNER</p>
-          <Link className="hero-inquiries-button" href="/contact">
+          <ModalLink className="hero-inquiries-button" modal="contact">
             Inquiries
-          </Link>
+          </ModalLink>
         </div>
       </div>
     </Section>

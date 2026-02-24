@@ -1,5 +1,5 @@
-import Link from "next/link";
 import { Section } from "@/components/Section";
+import { ModalLink } from "@/components/ModalLink";
 
 export function ReelSection() {
   return (
@@ -14,9 +14,9 @@ export function ReelSection() {
       <article className="reel-shell">
         <h2 id="reel-heading">MOTION REEL</h2>
         <p className="reel-action">
-          <Link className="reel-button" href="/reel">
+          <ModalLink className="reel-button" modal="reel">
             View Reel
-          </Link>
+          </ModalLink>
         </p>
         <p className="reel-index">01.</p>
         <p className="reel-divider">-</p>

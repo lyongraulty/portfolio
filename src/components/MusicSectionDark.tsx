@@ -1,15 +1,15 @@
-import Link from "next/link";
 import { Section } from "@/components/Section";
+import { ModalLink } from "@/components/ModalLink";
 
 export function MusicSectionDark() {
   return (
     <Section size="large" fullBleed className="music-section-dark" data-tone="dark" aria-labelledby="music-dark-heading">
       <div className="music-dark-inner">
-        <h2 id="music-dark-heading">MUSIC // MUSIC</h2>
+        <h2 id="music-dark-heading">MUSIC</h2>
         <p>
-          <Link className="project-button" href="/music">
+          <ModalLink className="project-button" modal="music">
             View
-          </Link>
+          </ModalLink>
         </p>
         <p className="project-index">#.</p>
         <p className="project-divider">-</p>

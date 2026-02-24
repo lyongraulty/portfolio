@@ -11,24 +11,25 @@ function closeToPreviousOrHome(router: ReturnType<typeof useRouter>) {
   }
 }
 
-export function ReelOverlayWindow() {
+export function ReelOverlayWindow({ onClose }: { onClose?: () => void }) {
   const router = useRouter();
+  const handleClose = onClose ?? (() => closeToPreviousOrHome(router));
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         event.preventDefault();
-        closeToPreviousOrHome(router);
+        handleClose();
       }
     };
 
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [router]);
+  }, [handleClose]);
 
   const handleBackdropClick = (event: MouseEvent<HTMLDivElement>) => {
     if (event.target === event.currentTarget) {
-      closeToPreviousOrHome(router);
+      handleClose();
     }
   };
 
@@ -44,7 +45,7 @@ export function ReelOverlayWindow() {
         <button
           type="button"
           className="window-close"
-          onClick={() => closeToPreviousOrHome(router)}
+          onClick={handleClose}
           aria-label="Close reel overlay"
         >
           Close

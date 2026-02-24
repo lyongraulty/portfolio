@@ -1,12 +1,12 @@
-import Link from "next/link";
 import { Section } from "@/components/Section";
+import { ModalLink } from "@/components/ModalLink";
 import { workItems } from "@/lib/work";
 
 export function WorkGrid() {
   return (
-    <Section id="work" className="work-section">
+    <Section id="projects" className="work-section">
       <header className="section-header">
-        <p className="kicker">Selected Work</p>
+        <p className="kicker">Selected Projects</p>
         <h2>Recent projects</h2>
       </header>
       <div className="work-grid">
@@ -17,7 +17,9 @@ export function WorkGrid() {
               <span>{item.category}</span>
             </p>
             <h3>
-              <Link href={`/work/${item.slug}`}>{item.title}</Link>
+              <ModalLink modal="project" slug={item.slug}>
+                {item.title}
+              </ModalLink>
             </h3>
             <p>{item.summary}</p>
           </article>

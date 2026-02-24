@@ -2,7 +2,9 @@
 
 import Link from "next/link";
 import { useEffect, useRef } from "react";
+import { usePathname } from "next/navigation";
 import { Container } from "@/components/Container";
+import { ModalLink } from "@/components/ModalLink";
 
 type NavItem = {
   label: string;
@@ -19,6 +21,7 @@ const navItems: NavItem[] = [
 ];
 
 export function SiteHeader() {
+  const pathname = usePathname();
   const headerRef = useRef<HTMLElement>(null);
   const lastScrollY = useRef(0);
   const lastOffset = useRef(0);
@@ -74,17 +77,116 @@ export function SiteHeader() {
     };
   }, []);
 
+  const smoothScrollToId = (id: string) => {
+    const target = document.getElementById(id);
+    if (!target) {
+      return;
+    }
+
+    const startY = window.scrollY;
+    const targetY = target.getBoundingClientRect().top + window.scrollY;
+    const distance = targetY - startY;
+    const duration = 500;
+    const startTime = performance.now();
+
+    const easeOutCubicBezier = (t: number) => {
+      const cx = 0.41;
+      const bx = 0.07;
+      const cy = 0.16;
+      const by = 0.96;
+
+      const sampleCurveX = (u: number) => {
+        const v = 1 - u;
+        return 3 * v * v * u * cx + 3 * v * u * u * bx + u * u * u;
+      };
+
+      const sampleCurveY = (u: number) => {
+        const v = 1 - u;
+        return 3 * v * v * u * cy + 3 * v * u * u * by + u * u * u;
+      };
+
+      let u = t;
+      for (let i = 0; i < 5; i += 1) {
+        const x = sampleCurveX(u) - t;
+        if (Math.abs(x) < 1e-4) break;
+        const dx = (sampleCurveX(u + 1e-4) - sampleCurveX(u - 1e-4)) / 2e-4;
+        if (Math.abs(dx) < 1e-6) break;
+        u -= x / dx;
+        u = Math.min(1, Math.max(0, u));
+      }
+
+      return sampleCurveY(u);
+    };
+
+    const tick = (now: number) => {
+      const elapsed = now - startTime;
+      const progress = Math.min(1, elapsed / duration);
+      const eased = easeOutCubicBezier(progress);
+      window.scrollTo({ top: startY + distance * eased, behavior: "auto" });
+
+      if (progress < 1) {
+        window.requestAnimationFrame(tick);
+      }
+    };
+
+    window.requestAnimationFrame(tick);
+  };
+
   return (
     <header className="site-header" ref={headerRef}>
       <div className="site-header-backdrop" aria-hidden="true" />
       <Container className="site-header-inner">
         <nav aria-label="Primary navigation">
           <ul className="site-nav-list">
-            {navItems.map((item) => (
-              <li key={item.href}>
-                <Link href={item.href}>{item.label}</Link>
-              </li>
-            ))}
+            {navItems.map((item) => {
+              if (item.href === "/contact") {
+                return (
+                  <li key={item.href}>
+                    <ModalLink modal="contact">{item.label}</ModalLink>
+                  </li>
+                );
+              }
+              if (item.href === "/sandbox") {
+                return (
+                  <li key={item.href}>
+                    <ModalLink modal="sandbox">{item.label}</ModalLink>
+                  </li>
+                );
+              }
+              if (item.href === "/music") {
+                return (
+                  <li key={item.href}>
+                    <ModalLink modal="music">{item.label}</ModalLink>
+                  </li>
+                );
+              }
+              if (item.href.startsWith("/#")) {
+                return (
+                  <li key={item.href}>
+                    <Link
+                      href={item.href}
+                      onClick={(event) => {
+                        if (pathname !== "/") {
+                          return;
+                        }
+                        event.preventDefault();
+                        const id = item.href.replace("/#", "");
+                        window.history.pushState(null, "", item.href);
+                        smoothScrollToId(id);
+                      }}
+                    >
+                      {item.label}
+                    </Link>
+                  </li>
+                );
+              }
+
+              return (
+                <li key={item.href}>
+                  <Link href={item.href}>{item.label}</Link>
+                </li>
+              );
+            })}
           </ul>
         </nav>
       </Container>
