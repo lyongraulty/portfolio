@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { JetBrains_Mono } from "next/font/google";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
+import { SectionHoverObserver } from "@/components/SectionHoverObserver";
 import "./globals.css";
 
 const jetbrainsMono = JetBrains_Mono({
@@ -21,6 +22,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     <html lang="en" className={jetbrainsMono.variable}>
       <body>
         <SiteHeader />
+        <SectionHoverObserver />
         <main>{children}</main>
         <SiteFooter />
       </body>

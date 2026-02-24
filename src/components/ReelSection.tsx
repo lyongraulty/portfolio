@@ -3,7 +3,14 @@ import { Section } from "@/components/Section";
 
 export function ReelSection() {
   return (
-    <Section id="reel" size="medium" className="reel-section" aria-labelledby="reel-heading">
+    <Section
+      id="reel"
+      size="medium"
+      className="reel-section"
+      data-tone="dark"
+      data-hover-zone="reel"
+      aria-labelledby="reel-heading"
+    >
       <article className="reel-shell">
         <h2 id="reel-heading">MOTION REEL</h2>
         <p className="reel-action">

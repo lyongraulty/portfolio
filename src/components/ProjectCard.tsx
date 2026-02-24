@@ -6,15 +6,30 @@ type ProjectCardProps = {
   index: number;
   title: string;
   description: string;
+  media?: {
+    type: "video" | "image";
+    src: string;
+  };
 };
 
 function formatIndex(index: number) {
   return String(index).padStart(2, "0");
 }
 
-export function ProjectCard({ slug, index, title, description }: ProjectCardProps) {
+export function ProjectCard({ slug, index, title, description, media }: ProjectCardProps) {
   return (
-    <article className="project-card">
+    <article className="project-card" data-hover-zone="project">
+      {media ? (
+        <div className="project-media" aria-hidden="true">
+          {media.type === "video" ? (
+            <video autoPlay muted loop playsInline preload="metadata">
+              <source src={media.src} type="video/mp4" />
+            </video>
+          ) : (
+            <img src={media.src} alt="" />
+          )}
+        </div>
+      ) : null}
       <Container className="project-card-inner">
         <h3>{title}</h3>
         <p>
