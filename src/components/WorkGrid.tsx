@@ -6,7 +6,7 @@ export function WorkGrid() {
   return (
     <Section id="projects" className="work-section">
       <header className="section-header">
-        <p className="kicker">Selected Projects</p>
+        <p className="kicker type-overline">Selected Projects</p>
         <h2>Recent projects</h2>
       </header>
       <div className="work-grid">

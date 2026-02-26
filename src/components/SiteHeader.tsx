@@ -137,7 +137,7 @@ export function SiteHeader() {
       <div className="site-header-backdrop" aria-hidden="true" />
       <Container className="site-header-inner">
         <nav aria-label="Primary navigation">
-          <ul className="site-nav-list">
+          <ul className="site-nav-list type-nav">
             {navItems.map((item) => {
               if (item.href === "/contact") {
                 return (

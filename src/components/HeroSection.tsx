@@ -20,8 +20,8 @@ export function HeroSection() {
       <div className="hero-overlay">
         <div className="hero-content">
           <h1 id="intro-heading">LYON GRAULTY</h1>
-          <p className="hero-subtitle">2D &amp; 3D MOTION DESIGNER</p>
-          <ModalLink className="hero-inquiries-button" modal="contact">
+          <p className="hero-subtitle type-overline">2D &amp; 3D MOTION DESIGNER</p>
+          <ModalLink className="hero-inquiries-button type-button" modal="contact">
             Inquiries
           </ModalLink>
         </div>

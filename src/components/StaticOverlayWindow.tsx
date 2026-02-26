@@ -41,7 +41,7 @@ export function StaticOverlayWindow({ title, onClose }: StaticOverlayWindowProps
   return (
     <div className="window-overlay" role="dialog" aria-modal="true" aria-label={`${title} overlay`} onClick={handleBackdropClick}>
       <div className="window-panel">
-        <button type="button" className="window-close" onClick={handleClose}>
+        <button type="button" className="window-close type-button" onClick={handleClose}>
           Close
         </button>
         <h2>{title}</h2>

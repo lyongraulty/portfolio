@@ -4,7 +4,7 @@ export function About() {
   return (
     <Section id="about">
       <header className="section-header">
-        <p className="kicker">About</p>
+        <p className="kicker type-overline">About</p>
         <h2>Built for clarity</h2>
       </header>
       <p>

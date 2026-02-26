@@ -14,13 +14,15 @@ export function ReelSection() {
       <article className="reel-shell">
         <h2 id="reel-heading">MOTION REEL</h2>
         <p className="reel-action">
-          <ModalLink className="reel-button" modal="reel">
+          <ModalLink className="reel-button type-button" modal="reel">
             View Reel
           </ModalLink>
         </p>
-        <p className="reel-index">01.</p>
-        <p className="reel-divider">-</p>
-        <p className="reel-description">A tightly edited compilation of recent work - both client and personal</p>
+        <p className="reel-index type-overline">01.</p>
+        <p className="reel-divider type-overline">-</p>
+        <p className="reel-description type-caption">
+          A tightly edited compilation of recent work - both client and personal
+        </p>
       </article>
     </Section>
   );

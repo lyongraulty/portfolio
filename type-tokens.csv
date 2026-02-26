@@ -1,0 +1,13 @@
+token,font,weight,size_px,style,letter_spacing,line_height,text_transform,color_light,color_dark,size_min_px,size_max_px,size_fluid_vw
+h1,"Arial Black, Helvetica Neue, Helvetica, Arial, sans-serif",900,,normal,-0.015em,1.1,uppercase,"hsla(0, 0%, 5%, 1)","#ffffff",32,56,4
+h2,"Proxima Nova, Helvetica Neue, Arial, sans-serif",800,40,normal,0.05em,1.4em,uppercase,"hsla(0, 0%, 5%, 1)","#ffffff",,,
+h3,"Proxima Nova, Helvetica Neue, Arial, sans-serif",600,28,normal,0.04em,2em,uppercase,"hsla(0, 0%, 5%, 1)","#ffffff",,,
+h4,"Proxima Nova, Helvetica Neue, Arial, sans-serif",800,22,normal,0.04em,1.4em,uppercase,"hsla(0, 0%, 5%, 1)","#ffffff",,,
+body,"PT Mono, Courier New, monospace",400,15,normal,0.01em,1.85,none,"hsla(0, 0%, 30%, 1)","#ffffff",,,
+type-body,"PT Mono, Courier New, monospace",400,15,normal,0.01em,1.85,none,"hsla(0, 0%, 30%, 1)","#ffffff",,,
+type-caption,"PT Mono, Courier New, monospace",400,15,normal,0.01em,1.7,none,"hsla(0, 0%, 30%, 1)","#ffffff",,,
+type-overline,"PT Mono, Courier New, monospace",400,14,normal,0.08em,1.5,uppercase,"hsla(0, 0%, 5%, 1)","#ffffff",,,
+type-button,"PT Mono, Courier New, monospace",500,15.2,normal,0.06em,1,uppercase,"hsla(0, 0%, 5%, 1)","#ffffff",,,
+type-meta,"PT Mono, Courier New, monospace",400,14,normal,0.01em,1.5,none,"hsla(0, 0%, 5%, 1)","#ffffff",,,
+type-nav,"PT Mono, Courier New, monospace",400,14,normal,0.08em,1.2,uppercase,"hsla(0, 0%, 5%, 1)","#ffffff",,,
+hero-h1-override,"Arial Black, Helvetica Neue, Helvetica, Arial, sans-serif",900,,normal,-0.02em,1.12,uppercase,"hsla(0, 0%, 5%, 1)","#ffffff",48,96,6

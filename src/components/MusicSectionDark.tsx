@@ -7,13 +7,13 @@ export function MusicSectionDark() {
       <div className="music-dark-inner">
         <h2 id="music-dark-heading">MUSIC</h2>
         <p>
-          <ModalLink className="project-button" modal="music">
+          <ModalLink className="project-button type-button" modal="music">
             View
           </ModalLink>
         </p>
-        <p className="project-index">#.</p>
-        <p className="project-divider">-</p>
-        <p className="project-description">
+        <p className="project-index type-overline">#.</p>
+        <p className="project-divider type-overline">-</p>
+        <p className="project-description type-caption">
           A sampling of my musical projects - complete with video, audio &amp; tour dates
         </p>
       </div>

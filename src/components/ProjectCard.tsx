@@ -33,13 +33,13 @@ export function ProjectCard({ slug, index, title, description, media }: ProjectC
       <Container className="project-card-inner">
         <h3>{title}</h3>
         <p>
-          <ModalLink className="project-button" modal="project" slug={slug}>
+          <ModalLink className="project-button type-button" modal="project" slug={slug}>
             View Project
           </ModalLink>
         </p>
-        <p className="project-index">{formatIndex(index)}.</p>
-        <p className="project-divider">-</p>
-        <p className="project-description">{description}</p>
+        <p className="project-index type-overline">{formatIndex(index)}.</p>
+        <p className="project-divider type-overline">-</p>
+        <p className="project-description type-caption">{description}</p>
       </Container>
     </article>
   );

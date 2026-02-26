@@ -4,7 +4,7 @@ export function Contact() {
   return (
     <Section id="contact">
       <header className="section-header">
-        <p className="kicker">Contact</p>
+        <p className="kicker type-overline">Contact</p>
         <h2>Let&apos;s build something useful</h2>
       </header>
       <p>Available for selected freelance and in-house collaborations.</p>

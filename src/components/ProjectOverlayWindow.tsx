@@ -47,14 +47,14 @@ export function ProjectOverlayWindow({ title, description, index, onClose }: Pro
   return (
     <div className="window-overlay" role="dialog" aria-modal="true" aria-label={title} onClick={handleBackdropClick}>
       <div className="window-panel">
-        <button type="button" className="window-close" onClick={handleClose} aria-label="Close project">
+        <button type="button" className="window-close type-button" onClick={handleClose} aria-label="Close project">
           Close
         </button>
-        <p className="reel-label">PROJECT</p>
+        <p className="reel-label type-overline">PROJECT</p>
         <h1>{title}</h1>
-        <p className="reel-index">{formatIndex(index)}.</p>
-        <p className="reel-divider">-</p>
-        <p className="reel-description">{description}</p>
+        <p className="reel-index type-overline">{formatIndex(index)}.</p>
+        <p className="reel-divider type-overline">-</p>
+        <p className="reel-description type-caption">{description}</p>
       </div>
     </div>
   );

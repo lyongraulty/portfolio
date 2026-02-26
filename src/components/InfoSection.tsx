@@ -3,7 +3,7 @@ import { Section } from "@/components/Section";
 export function InfoSection() {
   return (
     <Section id="info" size="small" containerClassName="info-copy" aria-labelledby="info-heading">
-      <h2 id="info-heading">Hi, I&apos;m Lyon</h2>
+      <h4 id="info-heading">Hi, I&apos;m Lyon</h4>
       <p>I am a freelance motion designer based in Austin, Texas and I love my job.</p>
       <p>
         Seriously, I can&apos;t believe I get to do this for a living. I&apos;ve met some great friends and worked on
