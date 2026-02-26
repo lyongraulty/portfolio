@@ -24,7 +24,7 @@ export function SiteFooter() {
           </ul>
         </nav>
         <p>
-          <a href="mailto:hello@example.com">hello@example.com</a>
+          <a href="mailto:hello@lyongraulty.com">hello@lyongraulty.com</a>
         </p>
         <p>© {new Date().getFullYear()} Portfolio</p>
       </Container>

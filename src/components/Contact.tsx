@@ -9,7 +9,7 @@ export function Contact() {
       </header>
       <p>Available for selected freelance and in-house collaborations.</p>
       <p>
-        <a href="mailto:hello@example.com">hello@example.com</a>
+        <a href="mailto:hello@lyongraulty.com">hello@lyongraulty.com</a>
       </p>
     </Section>
   );

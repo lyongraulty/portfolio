@@ -1,11 +1,13 @@
 "use client";
 
-import { useEffect, type MouseEvent } from "react";
+import { useCallback, useEffect, type MouseEvent, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 
 type StaticOverlayWindowProps = {
-  title: string;
+  title?: string;
+  dialogLabel?: string;
   onClose?: () => void;
+  children?: ReactNode;
 };
 
 function closeToPreviousOrHome(router: ReturnType<typeof useRouter>) {
@@ -16,9 +18,16 @@ function closeToPreviousOrHome(router: ReturnType<typeof useRouter>) {
   }
 }
 
-export function StaticOverlayWindow({ title, onClose }: StaticOverlayWindowProps) {
+export function StaticOverlayWindow({ title, dialogLabel, onClose, children }: StaticOverlayWindowProps) {
   const router = useRouter();
-  const handleClose = onClose ?? (() => closeToPreviousOrHome(router));
+  const handleClose = useCallback(() => {
+    if (onClose) {
+      onClose();
+      return;
+    }
+    closeToPreviousOrHome(router);
+  }, [onClose, router]);
+  const ariaLabel = dialogLabel ?? (title ? `${title} overlay` : "Modal overlay");
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -39,12 +48,13 @@ export function StaticOverlayWindow({ title, onClose }: StaticOverlayWindowProps
   };
 
   return (
-    <div className="window-overlay" role="dialog" aria-modal="true" aria-label={`${title} overlay`} onClick={handleBackdropClick}>
+    <div className="window-overlay" role="dialog" aria-modal="true" aria-label={ariaLabel} onClick={handleBackdropClick}>
       <div className="window-panel">
-        <button type="button" className="window-close type-button" onClick={handleClose}>
-          Close
+        <button type="button" className="window-close" aria-label="Close modal" onClick={handleClose}>
+          x
         </button>
-        <h2>{title}</h2>
+        {title ? <h2>{title}</h2> : null}
+        {children}
       </div>
     </div>
   );

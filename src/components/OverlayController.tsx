@@ -5,6 +5,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { ProjectOverlayWindow } from "@/components/ProjectOverlayWindow";
 import { ReelOverlayWindow } from "@/components/ReelOverlayWindow";
 import { StaticOverlayWindow } from "@/components/StaticOverlayWindow";
+import { ContactOverlayContent } from "@/components/ContactOverlayContent";
 import { getWorkBySlug, workItems } from "@/lib/work";
 
 function buildCloseHref(pathname: string, searchParams: URLSearchParams) {
@@ -78,7 +79,11 @@ export function OverlayController() {
   }
 
   if (modal === "contact") {
-    return <StaticOverlayWindow title="Contact" onClose={handleClose} />;
+    return (
+      <StaticOverlayWindow dialogLabel="Let's talk overlay" onClose={handleClose}>
+        <ContactOverlayContent />
+      </StaticOverlayWindow>
+    );
   }
 
   if (modal === "music") {
