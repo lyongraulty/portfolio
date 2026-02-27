@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { PT_Mono } from "next/font/google";
+import { Archivo_Black, Montserrat, PT_Mono } from "next/font/google";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
 import { OverlayController } from "@/components/OverlayController";
@@ -11,6 +11,20 @@ const ptMono = PT_Mono({
   variable: "--font-pt-mono",
   subsets: ["latin"],
   weight: ["400"],
+  display: "swap",
+});
+
+const archivoBlack = Archivo_Black({
+  variable: "--font-archivo-black",
+  subsets: ["latin"],
+  weight: ["400"],
+  display: "swap",
+});
+
+const montserrat = Montserrat({
+  variable: "--font-montserrat",
+  subsets: ["latin"],
+  weight: ["400", "600", "700", "800"],
   display: "swap",
 });
 
@@ -50,7 +64,11 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   const cssVarStyle = Object.fromEntries(cssVars) as React.CSSProperties;
 
   return (
-    <html lang="en" className={ptMono.variable} style={cssVarStyle}>
+    <html
+      lang="en"
+      className={`${ptMono.variable} ${archivoBlack.variable} ${montserrat.variable}`}
+      style={cssVarStyle}
+    >
       <body>
         <SiteHeader />
         <SectionHoverObserver />

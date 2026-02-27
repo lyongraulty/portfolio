@@ -16,11 +16,11 @@ export function WorkGrid() {
               <span>{item.year}</span>
               <span>{item.category}</span>
             </p>
-            <h3>
+            <h2>
               <ModalLink modal="project" slug={item.slug}>
                 {item.title}
               </ModalLink>
-            </h3>
+            </h2>
             <p>{item.summary}</p>
           </article>
         ))}

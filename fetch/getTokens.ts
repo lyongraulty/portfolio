@@ -1,7 +1,10 @@
 import "server-only";
+import { readFile } from "node:fs/promises";
+import path from "node:path";
 
 const TOKENS_URL =
-  "https://script.google.com/macros/s/AKfycby_0jvr3RPl2LBlKlPKcqt2xiiBsNVA_YFDWB-MSYgtISFxjAJG5rG4kOsRwVqWoqvm/exec";
+  "https://script.google.com/macros/s/AKfycbxFjryFYO9fo69JddLqAPGz5seQTyOLozK3Owhgw5f-9Ra3FZBG8MEGeg2RrLYPwMgT2w/exec";
+const FALLBACK_PATH = path.join(process.cwd(), "fetch", "appscript.json");
 
 export type TokenMap = Record<string, string | number>;
 type TokenRow = Record<string, unknown>;
@@ -105,9 +108,12 @@ function extractTokenRows(data: unknown): TokenRow[] {
     return [];
   }
 
-  const rowKeys = ["rows", "data", "values", "tokens"] as const;
-  for (const key of rowKeys) {
-    const candidate = data[key];
+  const rowKeys = new Set(["rows", "data", "values", "tokens", "type-tokens", "typetokens"]);
+  for (const [rawKey, candidate] of Object.entries(data)) {
+    const key = sanitizeName(rawKey);
+    if (!rowKeys.has(key)) {
+      continue;
+    }
     if (Array.isArray(candidate)) {
       const parsed = parseRowsFromArray(candidate);
       if (parsed.length > 0) {
@@ -235,31 +241,51 @@ function rowsToTokenMap(rows: TokenRow[]): TokenMap {
   return tokens;
 }
 
+async function parseTokens(data: unknown): Promise<TokenMap> {
+  if (!data || typeof data !== "object") {
+    return {};
+  }
+
+  const rows = extractTokenRows(data);
+  if (rows.length > 0) {
+    return rowsToTokenMap(rows);
+  }
+
+  if (isObject(data)) {
+    return toFlatTokenMap(data);
+  }
+
+  return {};
+}
+
+async function readFallbackTokens(): Promise<TokenMap> {
+  try {
+    const raw = await readFile(FALLBACK_PATH, "utf8");
+    const data = JSON.parse(raw) as unknown;
+    return parseTokens(data);
+  } catch {
+    return {};
+  }
+}
+
 export async function getTokens(): Promise<TokenMap> {
   try {
-    const response = await fetch(TOKENS_URL, { cache: "no-store" });
+    const response = await fetch(TOKENS_URL, {
+      next: { revalidate: 60 },
+    });
 
     if (!response.ok) {
-      return {};
+      return readFallbackTokens();
     }
 
     const data = (await response.json()) as unknown;
 
-    if (!data || typeof data !== "object") {
-      return {};
+    const parsed = await parseTokens(data);
+    if (Object.keys(parsed).length > 0) {
+      return parsed;
     }
-
-    const rows = extractTokenRows(data);
-    if (rows.length > 0) {
-      return rowsToTokenMap(rows);
-    }
-
-    if (isObject(data)) {
-      return toFlatTokenMap(data);
-    }
-
-    return {};
+    return readFallbackTokens();
   } catch {
-    return {};
+    return readFallbackTokens();
   }
 }

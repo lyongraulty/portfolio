@@ -1,7 +1,25 @@
 import { Section } from "@/components/Section";
 import { ModalLink } from "@/components/ModalLink";
+import { getPages } from "../../fetch/getPages";
 
-export function ReelSection() {
+function formatIndex(value: string | number | undefined): string {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) {
+    return "01";
+  }
+  return String(Math.max(1, Math.floor(numeric))).padStart(2, "0");
+}
+
+export async function ReelSection() {
+  const pages = await getPages();
+  const reelPage = pages.find((page) => String(page.page ?? "") === "1") ?? pages[0];
+  const title = String(reelPage?.title ?? "MOTION REEL");
+  const buttonText = String(reelPage?.["button-text"] ?? "View Reel");
+  const index = formatIndex(reelPage?.page);
+  const description = String(
+    reelPage?.["project-copy"] ?? "A tightly edited compilation of recent work - both client and personal",
+  );
+
   return (
     <Section
       id="reel"
@@ -12,16 +30,16 @@ export function ReelSection() {
       aria-labelledby="reel-heading"
     >
       <article className="reel-shell">
-        <h2 id="reel-heading">MOTION REEL</h2>
+        <h2 id="reel-heading">{title}</h2>
         <p className="reel-action">
           <ModalLink className="reel-button type-button" modal="reel">
-            View Reel
+            {buttonText}
           </ModalLink>
         </p>
-        <p className="reel-index type-overline">01.</p>
+        <p className="reel-index type-overline">{index}.</p>
         <p className="reel-divider type-overline">-</p>
-        <p className="reel-description type-caption">
-          A tightly edited compilation of recent work - both client and personal
+        <p className="reel-description type-caption" style={{ whiteSpace: "pre-line" }}>
+          {description}
         </p>
       </article>
     </Section>

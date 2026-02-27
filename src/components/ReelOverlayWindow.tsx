@@ -15,6 +15,29 @@ const REEL_VIDEO_URL = "https://res.cloudinary.com/dax2qbori/video/upload/v17720
 const REEL_THUMBNAIL_URL =
   "https://res.cloudinary.com/dax2qbori/image/upload/v1772047560/NameStill_qs7yvc.jpg";
 
+type ReelPage = {
+  page?: string | number;
+  title?: string;
+  ["video-01"]?: string;
+  ["video-01-thumb"]?: string;
+  ["copy-01"]?: string;
+};
+
+function normalizePages(data: unknown): ReelPage[] {
+  if (!data || typeof data !== "object") {
+    return [];
+  }
+  const rawPages = (data as { pages?: unknown }).pages;
+  if (!Array.isArray(rawPages)) {
+    return [];
+  }
+  return rawPages.filter((entry) => entry && typeof entry === "object") as ReelPage[];
+}
+
+function getReelPage(pages: ReelPage[]): ReelPage | null {
+  return pages.find((page) => String(page.page ?? "") === "1") ?? pages[0] ?? null;
+}
+
 function formatTime(seconds: number): string {
   if (!Number.isFinite(seconds) || seconds < 0) {
     return "0:00";
@@ -29,6 +52,7 @@ function formatTime(seconds: number): string {
 export function ReelOverlayWindow({ onClose }: { onClose?: () => void }) {
   const router = useRouter();
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const [pageData, setPageData] = useState<ReelPage | null>(null);
   const [hasStarted, setHasStarted] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -41,6 +65,30 @@ export function ReelOverlayWindow({ onClose }: { onClose?: () => void }) {
   }, [router]);
 
   const handleClose = onClose ?? defaultClose;
+
+  useEffect(() => {
+    let isMounted = true;
+    const load = async () => {
+      try {
+        const response = await fetch("/api/pages");
+        if (!response.ok) {
+          return;
+        }
+        const data = (await response.json()) as unknown;
+        const pages = normalizePages(data);
+        const reelPage = getReelPage(pages);
+        if (isMounted) {
+          setPageData(reelPage);
+        }
+      } catch {
+        // ignore and fall back to defaults
+      }
+    };
+    void load();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const closeReel = useCallback(() => {
     const video = videoRef.current;
@@ -155,6 +203,13 @@ export function ReelOverlayWindow({ onClose }: { onClose?: () => void }) {
     }
   };
 
+  const reelTitle = pageData?.title ?? "MOTION REEL";
+  const reelVideo = pageData?.["video-01"] || REEL_VIDEO_URL;
+  const reelThumb = pageData?.["video-01-thumb"] || REEL_THUMBNAIL_URL;
+  const reelCopy =
+    pageData?.["copy-01"] ??
+    "Title // Client // Role:\n\n\"Con Mi Madre\" // Zoticus // Animation\n\n\"Tomlinson's\" // Mishnoon // Design & Animation\n\n\"Glitch Callout\" // Captive // Animation\n\n\"Tradestation - Fresh Look\" // Black Math // 3D Animation\n\n\"Reach\" // Mishnoon // Design & Animation\n\n\"MTN\" // Personal Work // Design & Animation\n\n\"Idea Energy - unreleased\" // Perfect Form // Design & Animation\n\n\"Package Sensor\" // Captive // Animation\n\n\"Ash Britt\" // Zoticus // Design & Animation\n\n\"Electrolab\" // Zoticus // Design, Lighting, Texture, Camera & Animation\n\n\"Hammer Down\" // Personal Work // Design, Lighting, Texture, Camera, 2D & 3D Animation\n\n\"Tradestation - Discipline\" // Black Math // 3D Animation\n\n\"Universal Returns\" // Captive // Animation\n\n\"Jump\" // Personal Work // Design & Animation\n\n\"2019 Title Sequence\" // Personal Work // Design, Lighting, Texture, Camera & Animation\n\nMusic: \"Same Old Shit\" - Mulle Beats";
+
   return (
     <div
       className="window-overlay"
@@ -169,7 +224,7 @@ export function ReelOverlayWindow({ onClose }: { onClose?: () => void }) {
             <>
               <video
                 ref={videoRef}
-                src={REEL_VIDEO_URL}
+                src={reelVideo}
                 className="reel-video"
                 preload="metadata"
                 playsInline
@@ -214,34 +269,15 @@ export function ReelOverlayWindow({ onClose }: { onClose?: () => void }) {
               onClick={startPlayback}
               aria-label="Play motion reel"
             >
-              <img
-                src={REEL_THUMBNAIL_URL}
-                alt="Motion reel thumbnail"
-              />
+              <img src={reelThumb} alt="Motion reel thumbnail" />
               <span className="reel-cover-play" aria-hidden="true" />
             </button>
           )}
         </div>
-        <h2>MOTION REEL</h2>
-        <p className="reel-meta-heading type-overline">Title // Client // Role:</p>
-        <ul className="reel-meta-list">
-          <li className="type-body">&quot;Con Mi Madre&quot; // Zoticus // Animation</li>
-          <li className="type-body">&quot;Tomlinson&apos;s&quot; // Mishnoon // Design &amp; Animation</li>
-          <li className="type-body">&quot;Glitch Callout&quot; // Captive // Animation</li>
-          <li className="type-body">&quot;Tradestation - Fresh Look&quot; // Black Math // 3D Animation</li>
-          <li className="type-body">&quot;Reach&quot; // Mishnoon // Design &amp; Animation</li>
-          <li className="type-body">&quot;MTN&quot; // Personal Work // Design &amp; Animation</li>
-          <li className="type-body">&quot;Idea Energy - unreleased&quot; // Perfect Form // Design &amp; Animation</li>
-          <li className="type-body">&quot;Package Sensor&quot; // Captive // Animation</li>
-          <li className="type-body">&quot;Ash Britt&quot; // Zoticus // Design &amp; Animation</li>
-          <li className="type-body">&quot;Electrolab&quot; // Zoticus // Design, Lighting, Texture, Camera &amp; Animation</li>
-          <li className="type-body">&quot;Hammer Down&quot; // Personal Work // Design, Lighting, Texture, Camera, 2D &amp; 3D Animation</li>
-          <li className="type-body">&quot;Tradestation - Discipline&quot; // Black Math // 3D Animation</li>
-          <li className="type-body">&quot;Universal Returns&quot; // Captive // Animation</li>
-          <li className="type-body">&quot;Jump&quot; // Personal Work // Design &amp; Animation</li>
-          <li className="type-body">&quot;2019 Title Sequence&quot; // Personal Work // Design, Lighting, Texture, Camera &amp; Animation</li>
-        </ul>
-        <p className="reel-music type-meta">Music: &quot;Same Old Shit&quot; - Mulle Beats</p>
+        <h2>{reelTitle}</h2>
+        <p className="reel-meta-list type-body" style={{ whiteSpace: "pre-line" }}>
+          {reelCopy}
+        </p>
         <div className="reel-close-wrap">
           <button
             type="button"

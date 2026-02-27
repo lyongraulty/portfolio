@@ -8,8 +8,8 @@
   --gutter: clamp(1rem, 2vw, 2rem);
   --header-height: 3.75rem;
   --font-sans-fallback: "Helvetica Neue", Helvetica, Arial, sans-serif;
-  --font-display: "Arial Black";
-  --font-body: var(--font-pt-mono), "PT Mono";
+  --font-display: var(--font-archivo-black);
+  --font-body: var(--font-pt-mono);
   --size-hero-min: 3rem;
   --size-hero-max: 6rem;
   --size-hero: clamp(var(--size-hero-min), 6vw, var(--size-hero-max));
@@ -110,7 +110,7 @@ h1 {
 }
 
 h2 {
-  font-family: var(--h2-font, "Proxima Nova"), var(--font-sans-fallback);
+  font-family: var(--h2-font, var(--font-montserrat)), var(--font-sans-fallback);
   font-size: var(--h2-size-px, var(--size-h2));
   font-style: var(--h2-style, normal);
   font-weight: var(--h2-weight, 800);
@@ -121,7 +121,7 @@ h2 {
 }
 
 h3 {
-  font-family: var(--h3-font, "Proxima Nova"), var(--font-sans-fallback);
+  font-family: var(--h3-font, var(--font-montserrat)), var(--font-sans-fallback);
   font-size: var(--h3-size-px, 28px);
   font-style: var(--h3-style, normal);
   font-weight: var(--h3-weight, 600);
@@ -132,7 +132,7 @@ h3 {
 }
 
 h4 {
-  font-family: var(--h4-font, "Proxima Nova"), var(--font-sans-fallback);
+  font-family: var(--h4-font, var(--font-montserrat)), var(--font-sans-fallback);
   font-size: var(--h4-size-px, 22px);
   font-style: var(--h4-style, normal);
   font-weight: var(--h4-weight, 800);
