@@ -1,10 +1,6 @@
 import "server-only";
-import { readFile } from "node:fs/promises";
-import path from "node:path";
-
 const PAGES_URL =
   "https://script.google.com/macros/s/AKfycbxFjryFYO9fo69JddLqAPGz5seQTyOLozK3Owhgw5f-9Ra3FZBG8MEGeg2RrLYPwMgT2w/exec";
-const FALLBACK_PATH = path.join(process.cwd(), "fetch", "appscript.json");
 
 export type PageRow = Record<string, string | number | null | undefined>;
 
@@ -64,16 +60,6 @@ function extractPages(data: unknown): PageRow[] {
   return [];
 }
 
-async function readFallbackPages(): Promise<PageRow[]> {
-  try {
-    const raw = await readFile(FALLBACK_PATH, "utf8");
-    const data = JSON.parse(raw) as unknown;
-    return extractPages(data);
-  } catch {
-    return [];
-  }
-}
-
 export async function getPages(): Promise<PageRow[]> {
   try {
     const response = await fetch(PAGES_URL, {
@@ -81,16 +67,13 @@ export async function getPages(): Promise<PageRow[]> {
     });
 
     if (!response.ok) {
-      return readFallbackPages();
+      return [];
     }
 
     const data = (await response.json()) as unknown;
     const pages = extractPages(data);
-    if (pages.length > 0) {
-      return pages;
-    }
-    return readFallbackPages();
+    return pages;
   } catch {
-    return readFallbackPages();
+    return [];
   }
 }

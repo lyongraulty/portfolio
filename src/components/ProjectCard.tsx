@@ -31,9 +31,8 @@ export function ProjectCard({ slug, index, title, description, media }: ProjectC
         </div>
       ) : null}
       <Container className="project-card-inner">
-        <h2>{title}</h2>
-        <br />
-        <p>
+        <h2 className="project-title">{title}</h2>
+        <p className="project-action">
           <ModalLink className="project-button type-button" modal="project" slug={slug}>
             View Project
           </ModalLink>

@@ -19,6 +19,16 @@ export async function ReelSection() {
   const description = String(
     reelPage?.["project-copy"] ?? "A tightly edited compilation of recent work - both client and personal",
   );
+  const cardBackground =
+    (reelPage?.["card-background"] as string | undefined) ||
+    (reelPage?.["card_background"] as string | undefined) ||
+    (reelPage?.["card background"] as string | undefined) ||
+    "";
+  const reelStyle = cardBackground ? { ["--reel-bg" as string]: `url("${cardBackground}")` } : undefined;
+
+  if (process.env.NODE_ENV !== "production" && !cardBackground) {
+    console.warn("Reel card_background missing from page data", reelPage);
+  }
 
   return (
     <Section
@@ -28,6 +38,7 @@ export async function ReelSection() {
       data-tone="dark"
       data-hover-zone="reel"
       aria-labelledby="reel-heading"
+      style={reelStyle}
     >
       <article className="reel-shell">
         <h2 id="reel-heading">{title}</h2>

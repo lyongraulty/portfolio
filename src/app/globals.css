@@ -477,6 +477,7 @@ p {
   border-bottom: 1px solid var(--border);
   color: var(--text);
   position: relative;
+  overflow: hidden;
 }
 
 .reel-section::after {
@@ -500,16 +501,18 @@ p {
   content: "";
   position: absolute;
   inset: 0;
-  background-image: url("https://static1.squarespace.com/static/586488fed482e92ded46e4d8/t/66d8b9677a7959610c885f0e/1725479271993/Reel_Abstract_3x1_MED.png");
+  background-image: var(--reel-bg);
   background-size: cover;
   background-position: center;
-  transition: filter 0.2s ease;
+  transform: scale(1);
+  transition: filter 0.2s ease, transform 0.2s ease;
   z-index: 0;
 }
 
 .reel-section[data-hover="true"]::before,
 .reel-section:hover::before {
   filter: brightness(0.7) blur(4px);
+  transform: scale(1.02);
 }
 
 .reel-shell {
@@ -526,7 +529,8 @@ p {
 }
 
 .reel-action {
-  margin-top: 2rem;
+  margin-top: 1rem;
+  margin-bottom: 1.25rem;
 }
 
 .reel-button {
@@ -906,6 +910,14 @@ p {
   transition: background-color 150ms ease, color 150ms ease, border-color 150ms ease;
 }
 
+.project-title {
+  margin-bottom: 0.5em;
+}
+
+.project-action {
+  margin-bottom: 1rem;
+}
+
 .info-layout {
   display: grid;
   gap: 2.5rem;
@@ -954,7 +966,7 @@ p {
   color: var(--muted);
   font-size: var(--size-small);
   overflow: hidden;
-  transition: filter 0.2s ease;
+  transition: filter 0.2s ease, transform 0.2s ease;
   z-index: 0;
 }
 
@@ -967,6 +979,7 @@ p {
 
 .project-card {
   position: relative;
+  overflow: hidden;
 }
 
 .project-card::after {
@@ -980,19 +993,39 @@ p {
   z-index: 1;
 }
 
-.project-card[data-hover="true"]::after {
+.project-card[data-hover="true"]::after,
+.project-card:hover::after {
   background: rgba(0, 0, 0, 0.35);
   backdrop-filter: blur(6px);
 }
 
-.project-card[data-hover="true"] .project-media {
+.project-card[data-hover="true"] .project-media,
+.project-card:hover .project-media {
   filter: brightness(0.7) blur(3px);
+  transform: scale(1.03);
 }
 
 
 .sandbox-section {
   background: #ffffff;
   color: #000000;
+  position: relative;
+  overflow: hidden;
+}
+
+.sandbox-section::before {
+  content: "";
+  position: absolute;
+  inset: -2%;
+  background: radial-gradient(circle at top, rgba(0, 0, 0, 0.08), rgba(0, 0, 0, 0));
+  transform: scale(1);
+  transition: filter 0.25s ease, transform 0.25s ease;
+  z-index: 0;
+}
+
+.sandbox-section:hover::before {
+  filter: blur(6px);
+  transform: scale(1.02);
 }
 
 .sandbox-inner {
@@ -1002,6 +1035,8 @@ p {
   display: grid;
   align-content: start;
   gap: 0.7rem;
+  position: relative;
+  z-index: 1;
 }
 
 .sandbox-inner h2,
@@ -1015,6 +1050,23 @@ p {
   --border: #ffffff;
   background: var(--surface);
   color: var(--text);
+  position: relative;
+  overflow: hidden;
+}
+
+.music-section-dark::before {
+  content: "";
+  position: absolute;
+  inset: -2%;
+  background: radial-gradient(circle at top, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0));
+  transform: scale(1);
+  transition: filter 0.25s ease, transform 0.25s ease;
+  z-index: 0;
+}
+
+.music-section-dark:hover::before {
+  filter: blur(6px);
+  transform: scale(1.02);
 }
 
 .music-dark-inner {
@@ -1024,6 +1076,8 @@ p {
   display: grid;
   align-content: start;
   gap: 0.7rem;
+  position: relative;
+  z-index: 1;
 }
 
 .site-footer {
