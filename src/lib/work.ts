@@ -13,18 +13,6 @@ export type WorkItem = {
 
 export const workItems: WorkItem[] = [
   {
-    slug: "colossal-biosciences-the-dire-wolf",
-    title: "Colossal Biosciences - The dire wolf",
-    year: "2025",
-    category: "Motion Design",
-    summary: "Motion design for a high-profile launch that blended science, storytelling, and spectacle",
-    detail: "Motion design for a high-profile launch that blended science, storytelling, and spectacle.",
-    media: {
-      type: "video",
-      src: "https://static1.squarespace.com/static/586488fed482e92ded46e4d8/t/686569d6355fd216038a39c1/1751476695194/DireWolf_3x1+banner_8.mp4",
-    },
-  },
-  {
     slug: "sellout-film-title-sequence",
     title: "SEllout - film title sequence",
     year: "2024",

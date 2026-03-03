@@ -5,14 +5,15 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { type ReactNode } from "react";
 
 type ModalLinkProps = {
-  modal: "reel" | "contact" | "music" | "sandbox" | "project";
+  modal: "reel" | "contact" | "music" | "sandbox" | "project" | "project-page";
   slug?: string;
+  page?: string;
   className?: string;
   children: ReactNode;
   "aria-label"?: string;
 };
 
-export function ModalLink({ modal, slug, className, children, ...rest }: ModalLinkProps) {
+export function ModalLink({ modal, slug, page, className, children, ...rest }: ModalLinkProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const params = new URLSearchParams(searchParams.toString());
@@ -22,6 +23,12 @@ export function ModalLink({ modal, slug, className, children, ...rest }: ModalLi
     params.set("slug", slug);
   } else {
     params.delete("slug");
+  }
+
+  if (page) {
+    params.set("page", page);
+  } else {
+    params.delete("page");
   }
 
   const query = params.toString();

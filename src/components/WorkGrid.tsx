@@ -21,7 +21,7 @@ export function WorkGrid() {
                 {item.title}
               </ModalLink>
             </h2>
-            <p>{item.summary}</p>
+            <p className="type-caption">{item.summary}</p>
           </article>
         ))}
       </div>

@@ -18,10 +18,23 @@ const REEL_THUMBNAIL_URL =
 type ReelPage = {
   page?: string | number;
   title?: string;
-  ["video-01"]?: string;
-  ["video-01-thumb"]?: string;
-  ["copy-01"]?: string;
+  [key: string]: string | number | undefined;
 };
+
+function pickPageString(page: ReelPage | null, keys: string[], fallback: string): string {
+  if (!page) {
+    return fallback;
+  }
+
+  for (const key of keys) {
+    const value = page[key];
+    if (typeof value === "string" && value.trim().length > 0) {
+      return value;
+    }
+  }
+
+  return fallback;
+}
 
 function normalizePages(data: unknown): ReelPage[] {
   if (!data || typeof data !== "object") {
@@ -49,6 +62,32 @@ function formatTime(seconds: number): string {
   return `${minutes}:${String(secs).padStart(2, "0")}`;
 }
 
+function toYouTubeEmbedUrl(url: string): string | null {
+  try {
+    const parsed = new URL(url);
+    const host = parsed.hostname.toLowerCase().replace(/^www\./, "");
+    let videoId = "";
+
+    if (host === "youtu.be") {
+      videoId = parsed.pathname.split("/").filter(Boolean)[0] ?? "";
+    } else if (host.endsWith("youtube.com") || host === "youtube-nocookie.com") {
+      if (parsed.pathname === "/watch") {
+        videoId = parsed.searchParams.get("v") ?? "";
+      } else if (parsed.pathname.startsWith("/embed/") || parsed.pathname.startsWith("/shorts/")) {
+        videoId = parsed.pathname.split("/")[2] ?? "";
+      }
+    }
+
+    if (!videoId) {
+      return null;
+    }
+
+    return `https://www.youtube-nocookie.com/embed/${encodeURIComponent(videoId)}?autoplay=1&rel=0&modestbranding=1`;
+  } catch {
+    return null;
+  }
+}
+
 export function ReelOverlayWindow({ onClose }: { onClose?: () => void }) {
   const router = useRouter();
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -65,6 +104,15 @@ export function ReelOverlayWindow({ onClose }: { onClose?: () => void }) {
   }, [router]);
 
   const handleClose = onClose ?? defaultClose;
+  const reelTitle = pageData?.title ?? "MOTION REEL";
+  const reelVideoSource = pickPageString(pageData, ["video-01"], REEL_VIDEO_URL);
+  const reelYouTubeEmbed = toYouTubeEmbedUrl(reelVideoSource);
+  const reelThumb = pickPageString(pageData, ["videothumb-01", "video-01-thumb"], REEL_THUMBNAIL_URL);
+  const reelCopy = pickPageString(
+    pageData,
+    ["copy-01"],
+    "Title // Client // Role:\n\n\"Con Mi Madre\" // Zoticus // Animation\n\n\"Tomlinson's\" // Mishnoon // Design & Animation\n\n\"Glitch Callout\" // Captive // Animation\n\n\"Tradestation - Fresh Look\" // Black Math // 3D Animation\n\n\"Reach\" // Mishnoon // Design & Animation\n\n\"MTN\" // Personal Work // Design & Animation\n\n\"Idea Energy - unreleased\" // Perfect Form // Design & Animation\n\n\"Package Sensor\" // Captive // Animation\n\n\"Ash Britt\" // Zoticus // Design & Animation\n\n\"Electrolab\" // Zoticus // Design, Lighting, Texture, Camera & Animation\n\n\"Hammer Down\" // Personal Work // Design, Lighting, Texture, Camera, 2D & 3D Animation\n\n\"Tradestation - Discipline\" // Black Math // 3D Animation\n\n\"Universal Returns\" // Captive // Animation\n\n\"Jump\" // Personal Work // Design & Animation\n\n\"2019 Title Sequence\" // Personal Work // Design, Lighting, Texture, Camera & Animation\n\nMusic: \"Same Old Shit\" - Mulle Beats",
+  );
 
   useEffect(() => {
     let isMounted = true;
@@ -142,6 +190,10 @@ export function ReelOverlayWindow({ onClose }: { onClose?: () => void }) {
 
   const startPlayback = useCallback(() => {
     setHasStarted(true);
+    if (reelYouTubeEmbed) {
+      return;
+    }
+
     window.requestAnimationFrame(() => {
       const video = videoRef.current;
       if (!video) {
@@ -149,7 +201,7 @@ export function ReelOverlayWindow({ onClose }: { onClose?: () => void }) {
       }
       void video.play();
     });
-  }, []);
+  }, [reelYouTubeEmbed]);
 
   const togglePlayback = useCallback(() => {
     const video = videoRef.current;
@@ -203,13 +255,6 @@ export function ReelOverlayWindow({ onClose }: { onClose?: () => void }) {
     }
   };
 
-  const reelTitle = pageData?.title ?? "MOTION REEL";
-  const reelVideo = pageData?.["video-01"] || REEL_VIDEO_URL;
-  const reelThumb = pageData?.["video-01-thumb"] || REEL_THUMBNAIL_URL;
-  const reelCopy =
-    pageData?.["copy-01"] ??
-    "Title // Client // Role:\n\n\"Con Mi Madre\" // Zoticus // Animation\n\n\"Tomlinson's\" // Mishnoon // Design & Animation\n\n\"Glitch Callout\" // Captive // Animation\n\n\"Tradestation - Fresh Look\" // Black Math // 3D Animation\n\n\"Reach\" // Mishnoon // Design & Animation\n\n\"MTN\" // Personal Work // Design & Animation\n\n\"Idea Energy - unreleased\" // Perfect Form // Design & Animation\n\n\"Package Sensor\" // Captive // Animation\n\n\"Ash Britt\" // Zoticus // Design & Animation\n\n\"Electrolab\" // Zoticus // Design, Lighting, Texture, Camera & Animation\n\n\"Hammer Down\" // Personal Work // Design, Lighting, Texture, Camera, 2D & 3D Animation\n\n\"Tradestation - Discipline\" // Black Math // 3D Animation\n\n\"Universal Returns\" // Captive // Animation\n\n\"Jump\" // Personal Work // Design & Animation\n\n\"2019 Title Sequence\" // Personal Work // Design, Lighting, Texture, Camera & Animation\n\nMusic: \"Same Old Shit\" - Mulle Beats";
-
   return (
     <div
       className="window-overlay"
@@ -221,47 +266,58 @@ export function ReelOverlayWindow({ onClose }: { onClose?: () => void }) {
       <div className="window-panel reel-window">
         <div className="reel-embed">
           {hasStarted ? (
-            <>
-              <video
-                ref={videoRef}
-                src={reelVideo}
+            reelYouTubeEmbed ? (
+              <iframe
+                src={reelYouTubeEmbed}
                 className="reel-video"
-                preload="metadata"
-                playsInline
-                onClick={togglePlayback}
+                title={`${reelTitle} video`}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                referrerPolicy="strict-origin-when-cross-origin"
+                allowFullScreen
               />
-              <div className="reel-controls" role="group" aria-label="Video controls">
-                <button type="button" className="reel-control-btn type-button" onClick={togglePlayback}>
-                  {isPlaying ? "Pause" : "Play"}
-                </button>
-                <input
-                  className="reel-scrubber"
-                  type="range"
-                  min={0}
-                  max={Math.max(duration, 0)}
-                  step={0.1}
-                  value={Math.min(currentTime, duration || 0)}
-                  onChange={(event) => onSeek(event.currentTarget.value)}
-                  aria-label="Seek"
+            ) : (
+              <>
+                <video
+                  ref={videoRef}
+                  src={reelVideoSource}
+                  className="reel-video"
+                  preload="metadata"
+                  playsInline
+                  onClick={togglePlayback}
                 />
-                <span className="reel-time type-meta">
-                  {formatTime(currentTime)} / {formatTime(duration)}
-                </span>
-                <button type="button" className="reel-control-btn type-button" onClick={toggleMute}>
-                  {isMuted || volume === 0 ? "Unmute" : "Mute"}
-                </button>
-                <input
-                  className="reel-volume"
-                  type="range"
-                  min={0}
-                  max={1}
-                  step={0.01}
-                  value={isMuted ? 0 : volume}
-                  onChange={(event) => onVolumeChange(event.currentTarget.value)}
-                  aria-label="Volume"
-                />
-              </div>
-            </>
+                <div className="reel-controls" role="group" aria-label="Video controls">
+                  <button type="button" className="reel-control-btn type-button" onClick={togglePlayback}>
+                    {isPlaying ? "Pause" : "Play"}
+                  </button>
+                  <input
+                    className="reel-scrubber"
+                    type="range"
+                    min={0}
+                    max={Math.max(duration, 0)}
+                    step={0.1}
+                    value={Math.min(currentTime, duration || 0)}
+                    onChange={(event) => onSeek(event.currentTarget.value)}
+                    aria-label="Seek"
+                  />
+                  <span className="reel-time type-meta">
+                    {formatTime(currentTime)} / {formatTime(duration)}
+                  </span>
+                  <button type="button" className="reel-control-btn type-button" onClick={toggleMute}>
+                    {isMuted || volume === 0 ? "Unmute" : "Mute"}
+                  </button>
+                  <input
+                    className="reel-volume"
+                    type="range"
+                    min={0}
+                    max={1}
+                    step={0.01}
+                    value={isMuted ? 0 : volume}
+                    onChange={(event) => onVolumeChange(event.currentTarget.value)}
+                    aria-label="Volume"
+                  />
+                </div>
+              </>
+            )
           ) : (
             <button
               type="button"
@@ -284,9 +340,7 @@ export function ReelOverlayWindow({ onClose }: { onClose?: () => void }) {
             className="window-close type-button"
             onClick={closeReel}
             aria-label="Close reel overlay"
-          >
-            Close
-          </button>
+          />
         </div>
       </div>
     </div>

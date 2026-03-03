@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 
 const TOKENS_URL =
-  "https://script.google.com/macros/s/AKfycbxFjryFYO9fo69JddLqAPGz5seQTyOLozK3Owhgw5f-9Ra3FZBG8MEGeg2RrLYPwMgT2w/exec";
+  "https://script.google.com/macros/s/AKfycbyvBD7Qu9wz1f2kZreqiLyrSlpvAhXbQaPb5OtqsWgD4a1VxCeklB_y69AStbRTBu2oBQ/exec";
 const FALLBACK_PATH = path.join(process.cwd(), "fetch", "appscript.json");
 
 export type TokenMap = Record<string, string | number>;
@@ -258,14 +258,70 @@ async function parseTokens(data: unknown): Promise<TokenMap> {
   return {};
 }
 
-async function readFallbackTokens(): Promise<TokenMap> {
+function extractFontList(data: unknown): string[] {
+  if (!isObject(data)) {
+    return [];
+  }
+
+  const rawFonts = data["font-list"];
+  if (!Array.isArray(rawFonts)) {
+    return [];
+  }
+
+  const fonts = rawFonts
+    .map((entry) => {
+      if (typeof entry === "string") {
+        return entry.trim();
+      }
+
+      if (isObject(entry)) {
+        const direct = entry["font-list"];
+        if (typeof direct === "string") {
+          return direct.trim();
+        }
+
+        const fallback = entry.font;
+        if (typeof fallback === "string") {
+          return fallback.trim();
+        }
+      }
+
+      return "";
+    })
+    .filter((name) => name.length > 0);
+
+  return Array.from(new Set(fonts));
+}
+
+async function readFallbackData(): Promise<unknown | null> {
   try {
     const raw = await readFile(FALLBACK_PATH, "utf8");
-    const data = JSON.parse(raw) as unknown;
+    return JSON.parse(raw) as unknown;
+  } catch {
+    return null;
+  }
+}
+
+async function readFallbackTokens(): Promise<TokenMap> {
+  const data = await readFallbackData();
+  if (!data) {
+    return {};
+  }
+
+  try {
     return parseTokens(data);
   } catch {
     return {};
   }
+}
+
+async function readFallbackFontList(): Promise<string[]> {
+  const data = await readFallbackData();
+  if (!data) {
+    return [];
+  }
+
+  return extractFontList(data);
 }
 
 export async function getTokens(): Promise<TokenMap> {
@@ -287,5 +343,28 @@ export async function getTokens(): Promise<TokenMap> {
     return readFallbackTokens();
   } catch {
     return readFallbackTokens();
+  }
+}
+
+export async function getFontList(): Promise<string[]> {
+  try {
+    const response = await fetch(TOKENS_URL, {
+      next: { revalidate: 60 },
+    });
+
+    if (!response.ok) {
+      return readFallbackFontList();
+    }
+
+    const data = (await response.json()) as unknown;
+    const fonts = extractFontList(data);
+
+    if (fonts.length > 0) {
+      return fonts;
+    }
+
+    return readFallbackFontList();
+  } catch {
+    return readFallbackFontList();
   }
 }

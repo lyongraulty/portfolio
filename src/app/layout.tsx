@@ -4,7 +4,7 @@ import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
 import { OverlayController } from "@/components/OverlayController";
 import { SectionHoverObserver } from "@/components/SectionHoverObserver";
-import { getTokens } from "../../fetch/getTokens";
+import { getFontList, getTokens } from "../../fetch/getTokens";
 import "./globals.css";
 
 const ptMono = PT_Mono({
@@ -43,8 +43,13 @@ function toCssVarName(key: string): string {
   return normalized;
 }
 
+function toGoogleFontsHref(fontFamily: string): string {
+  const family = encodeURIComponent(fontFamily.trim()).replace(/%20/g, "+");
+  return `https://fonts.googleapis.com/css2?family=${family}&display=swap`;
+}
+
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  const tokens = await getTokens();
+  const [tokens, fontList] = await Promise.all([getTokens(), getFontList()]);
 
   const cssVars = Object.entries(tokens)
     .sort(([a], [b]) => a.localeCompare(b))
@@ -62,6 +67,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
     .filter((entry): entry is readonly [string, string] => entry !== null);
 
   const cssVarStyle = Object.fromEntries(cssVars) as React.CSSProperties;
+  const fontStylesheets = Array.from(new Set(fontList.map(toGoogleFontsHref)));
 
   return (
     <html
@@ -69,6 +75,13 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
       className={`${ptMono.variable} ${archivoBlack.variable} ${montserrat.variable}`}
       style={cssVarStyle}
     >
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
+        {fontStylesheets.map((href) => (
+          <link key={href} rel="stylesheet" href={href} />
+        ))}
+      </head>
       <body>
         <SiteHeader />
         <SectionHoverObserver />

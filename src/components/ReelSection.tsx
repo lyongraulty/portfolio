@@ -1,5 +1,6 @@
 import { Section } from "@/components/Section";
 import { ModalLink } from "@/components/ModalLink";
+import { isLikelyVideoUrl } from "@/lib/mediaUrl";
 import { getPages } from "../../fetch/getPages";
 
 function formatIndex(value: string | number | undefined): string {
@@ -24,7 +25,9 @@ export async function ReelSection() {
     (reelPage?.["card_background"] as string | undefined) ||
     (reelPage?.["card background"] as string | undefined) ||
     "";
-  const reelStyle = cardBackground ? { ["--reel-bg" as string]: `url("${cardBackground}")` } : undefined;
+  const backgroundType = isLikelyVideoUrl(cardBackground) ? "video" : "image";
+  const reelStyle =
+    cardBackground && backgroundType === "image" ? { ["--reel-bg" as string]: `url("${cardBackground}")` } : undefined;
 
   if (process.env.NODE_ENV !== "production" && !cardBackground) {
     console.warn("Reel card_background missing from page data", reelPage);
@@ -37,9 +40,22 @@ export async function ReelSection() {
       className="reel-section"
       data-tone="dark"
       data-hover-zone="reel"
+      data-reel-bg-type={backgroundType}
       aria-labelledby="reel-heading"
       style={reelStyle}
     >
+      {cardBackground && backgroundType === "video" ? (
+        <video
+          className="reel-bg-video"
+          src={cardBackground}
+          autoPlay
+          muted
+          loop
+          playsInline
+          preload="metadata"
+          aria-hidden="true"
+        />
+      ) : null}
       <article className="reel-shell">
         <h2 id="reel-heading">{title}</h2>
         <p className="reel-action">

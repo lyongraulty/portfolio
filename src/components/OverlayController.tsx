@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { ProjectOverlayWindow } from "@/components/ProjectOverlayWindow";
+import { ProjectPageOverlayWindow } from "@/components/ProjectPageOverlayWindow";
 import { ReelOverlayWindow } from "@/components/ReelOverlayWindow";
 import { StaticOverlayWindow } from "@/components/StaticOverlayWindow";
 import { ContactOverlayContent } from "@/components/ContactOverlayContent";
@@ -12,6 +13,7 @@ function buildCloseHref(pathname: string, searchParams: URLSearchParams) {
   const params = new URLSearchParams(searchParams.toString());
   params.delete("modal");
   params.delete("slug");
+  params.delete("page");
   const query = params.toString();
   return query ? `${pathname}?${query}` : pathname;
 }
@@ -22,6 +24,7 @@ export function OverlayController() {
   const searchParams = useSearchParams();
   const modal = searchParams.get("modal");
   const slug = searchParams.get("slug");
+  const page = searchParams.get("page");
   const previousOverflow = useRef<string | null>(null);
 
   const project = useMemo(() => (slug ? getWorkBySlug(slug) : null), [slug]);
@@ -76,6 +79,13 @@ export function OverlayController() {
 
   if (modal === "reel") {
     return <ReelOverlayWindow onClose={handleClose} />;
+  }
+
+  if (modal === "project-page") {
+    if (!page) {
+      return null;
+    }
+    return <ProjectPageOverlayWindow pageId={page} onClose={handleClose} />;
   }
 
   if (modal === "contact") {
