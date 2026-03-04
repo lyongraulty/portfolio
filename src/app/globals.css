@@ -1003,6 +1003,16 @@ p {
   max-width: 74ch;
 }
 
+.info-logos-wrap {
+  width: 100%;
+}
+
+.info-logos {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
 .info-image {
   width: 100%;
   display: grid;
