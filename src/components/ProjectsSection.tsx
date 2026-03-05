@@ -1,36 +1,18 @@
 import { ProjectCard } from "@/components/ProjectCard";
 import { Section } from "@/components/Section";
 import { isLikelyVideoUrl } from "@/lib/mediaUrl";
-import { workItems } from "@/lib/work";
 import { getPages, type PageRow } from "../../fetch/getPages";
 
-function toPageString(value: string | number | null | undefined): string {
+function toPageString(value: unknown): string {
   return typeof value === "string" ? value : value === null || value === undefined ? "" : String(value);
 }
 
-function toPageNumber(value: string | number | null | undefined): number | null {
+function toPageNumber(value: unknown): number | null {
   const numeric = Number(toPageString(value).trim());
   if (!Number.isFinite(numeric)) {
     return null;
   }
   return Math.floor(numeric);
-}
-
-function getFirstPageVideo(page: PageRow | null): string {
-  if (!page) {
-    return "";
-  }
-
-  for (let slot = 1; slot <= 8; slot += 1) {
-    const key = `video-${String(slot).padStart(2, "0")}`;
-    const compactKey = `video${String(slot).padStart(2, "0")}`;
-    const value = toPageString(page[key] ?? page[compactKey]);
-    if (value.trim().length > 0) {
-      return value;
-    }
-  }
-
-  return "";
 }
 
 function toYouTubeThumb(url: string): string | null {
@@ -59,60 +41,101 @@ function toYouTubeThumb(url: string): string | null {
   }
 }
 
+function getPageCardMedia(page: PageRow): { type: "video" | "image"; src: string } | undefined {
+  const cardBackground = toPageString(page["card-background"] ?? page.cardbackground ?? page["card-background-image"]).trim();
+  if (cardBackground) {
+    return {
+      type: isLikelyVideoUrl(cardBackground) ? "video" : "image",
+      src: cardBackground,
+    };
+  }
+
+  if (!Array.isArray(page.blocks)) {
+    return undefined;
+  }
+
+  const blocks = page.blocks.filter((block): block is Record<string, unknown> => !!block && typeof block === "object");
+  const videoBlock =
+    blocks.find((block) => {
+      const type = toPageString(block.type).trim();
+      return type === "video" || type === "video_embed";
+    }) ?? null;
+
+  if (!videoBlock || !Array.isArray(videoBlock.media)) {
+    return undefined;
+  }
+
+  const media = videoBlock.media.filter((item): item is Record<string, unknown> => !!item && typeof item === "object");
+  const poster =
+    media.find((item) => {
+      const role = toPageString(item.role).trim().toLowerCase();
+      return role === "poster" || role === "image";
+    }) ?? null;
+  if (poster) {
+    const posterUrl = toPageString(poster.url).trim();
+    if (posterUrl) {
+      return { type: "image", src: posterUrl };
+    }
+  }
+
+  const primary =
+    media.find((item) => {
+      const role = toPageString(item.role).trim().toLowerCase();
+      return role === "video" || role === "embed";
+    }) ?? media[0];
+  const primaryUrl = toPageString(primary?.url).trim();
+  if (!primaryUrl) {
+    return undefined;
+  }
+
+  const thumb = toYouTubeThumb(primaryUrl);
+  if (thumb) {
+    return { type: "image", src: thumb };
+  }
+
+  return isLikelyVideoUrl(primaryUrl) ? { type: "video", src: primaryUrl } : undefined;
+}
+
+function isRenderableProjectPage(page: PageRow): boolean {
+  const title = toPageString(page.title).trim();
+  const copy = toPageString(page["project-copy"]).trim();
+  const media = getPageCardMedia(page);
+  return !!(title || copy || media);
+}
+
 export async function ProjectsSection() {
   const pages = await getPages();
-  const pageTwo =
-    pages.find((page) => toPageNumber(page.page) === 2) ??
-    pages.find((page) => toPageString(page.page).trim() === "2") ??
-    pages[1] ??
-    null;
-  const pageTitle = toPageString(pageTwo?.title).trim();
-  const pageButtonText = toPageString(pageTwo?.["button-text"]).trim();
-  const pageCopy = toPageString(pageTwo?.["project-copy"]).trim();
-  const pageCardBackground = toPageString(
-    pageTwo?.["card-background"] ?? pageTwo?.cardbackground ?? pageTwo?.["card-background-image"],
-  ).trim();
-  const pageFirstVideo = getFirstPageVideo(pageTwo);
-
-  const youtubeThumb = pageFirstVideo ? toYouTubeThumb(pageFirstVideo) : null;
-  const pageMedia = pageCardBackground.length > 0
-    ? { type: (isLikelyVideoUrl(pageCardBackground) ? "video" : "image") as const, src: pageCardBackground }
-    : youtubeThumb
-      ? { type: "image" as const, src: youtubeThumb }
-      : pageFirstVideo.length > 0
-        ? { type: "video" as const, src: pageFirstVideo }
-        : undefined;
-
-  const hasPageTwoCard = !!(pageTitle || pageCopy || pageMedia);
+  const projectPages = pages
+    .filter((page) => {
+      const pageNumber = toPageNumber(page.page);
+      return pageNumber !== null && pageNumber > 1;
+    })
+    .sort((a, b) => (toPageNumber(a.page) ?? Number.MAX_SAFE_INTEGER) - (toPageNumber(b.page) ?? Number.MAX_SAFE_INTEGER))
+    .filter(isRenderableProjectPage);
 
   return (
     <Section id="projects" size="medium" fullBleed className="projects-section" data-tone="dark" aria-label="Projects">
       <div className="project-stack">
-        {workItems.map((project, index) => {
-          const displayIndex = hasPageTwoCard && index >= 1 ? index + 3 : index + 2;
-          return [
-              <ProjectCard
-                key={project.slug}
-                slug={project.slug}
-                index={displayIndex}
-                title={project.title}
-                description={project.summary}
-                media={project.media}
-              />,
-              index === 0 && hasPageTwoCard ? (
-                <ProjectCard
-                  key="page-two-live-project"
-                  slug="page-two-live-project"
-                  modal="project-page"
-                  page="2"
-                  index={3}
-                  title={pageTitle || "PROJECT"}
-                  description={pageCopy || "Live project loaded from page variables."}
-                  buttonText={pageButtonText || "View Project"}
-                  media={pageMedia}
-                />
-              ) : null,
-            ];
+        {projectPages.map((page) => {
+          const pageNumber = toPageNumber(page.page) ?? 0;
+          const title = toPageString(page.title).trim() || "PROJECT";
+          const description = toPageString(page["project-copy"]).trim() || "Live project loaded from page variables.";
+          const buttonText = toPageString(page["button-text"]).trim() || "View Project";
+          const media = getPageCardMedia(page);
+
+          return (
+            <ProjectCard
+              key={`page-${pageNumber}`}
+              slug={`page-${pageNumber}`}
+              modal="project-page"
+              page={String(pageNumber)}
+              index={pageNumber}
+              title={title}
+              description={description}
+              buttonText={buttonText}
+              media={media}
+            />
+          );
         })}
       </div>
     </Section>

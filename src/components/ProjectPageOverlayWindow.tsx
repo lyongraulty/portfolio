@@ -3,13 +3,27 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } from "react";
 import { useRouter } from "next/navigation";
 
-type PageRow = Record<string, string | number | null | undefined>;
+type PageRow = Record<string, unknown>;
+
+type MediaItem = {
+  url?: unknown;
+  role?: unknown;
+  thumbnail_at?: unknown;
+};
+
+type BlockItem = {
+  index?: unknown;
+  type?: unknown;
+  copy?: unknown;
+  media?: unknown;
+};
 
 type Clip = {
   slot: number;
   video: string;
   thumb: string;
   copy: string;
+  thumbnailAt?: number;
 };
 
 function closeToPreviousOrHome(router: ReturnType<typeof useRouter>) {
@@ -20,7 +34,7 @@ function closeToPreviousOrHome(router: ReturnType<typeof useRouter>) {
   }
 }
 
-function toText(value: string | number | null | undefined): string {
+function toText(value: unknown): string {
   return typeof value === "string" ? value : value === null || value === undefined ? "" : String(value);
 }
 
@@ -66,6 +80,115 @@ function buildClips(page: PageRow | null): Clip[] {
     return [];
   }
 
+  const blocksRaw = page.blocks;
+  if (Array.isArray(blocksRaw)) {
+    const blockClips: Clip[] = [];
+    const blockTextBySlot = new Map<number, string>();
+    const orderedBlockText: string[] = [];
+
+    const toBlockSlot = (value: unknown, fallback: number): number => {
+      if (typeof value === "number" && Number.isFinite(value) && value > 0) {
+        return Math.floor(value);
+      }
+      const parsed = Number(toText(value).trim());
+      if (Number.isFinite(parsed) && parsed > 0) {
+        return Math.floor(parsed);
+      }
+      return fallback;
+    };
+
+    blocksRaw.forEach((rawBlock, i) => {
+      if (!rawBlock || typeof rawBlock !== "object") {
+        return;
+      }
+      const block = rawBlock as BlockItem & { text?: unknown; body?: unknown; description?: unknown };
+      const blockType = toText(block.type).trim().toLowerCase();
+      if (blockType === "video" || blockType === "video_embed") {
+        return;
+      }
+
+      const copy = toText(block.copy ?? block.text ?? block.body ?? block.description).trim();
+      if (!copy) {
+        return;
+      }
+
+      const slot = toBlockSlot(block.index, i + 1);
+      if (!blockTextBySlot.has(slot)) {
+        blockTextBySlot.set(slot, copy);
+      }
+      orderedBlockText.push(copy);
+    });
+
+    let nextOrderedCopyIndex = 0;
+
+    blocksRaw.forEach((rawBlock, i) => {
+      if (!rawBlock || typeof rawBlock !== "object") {
+        return;
+      }
+      const block = rawBlock as BlockItem;
+      const blockType = toText(block.type).trim();
+      if (blockType !== "video" && blockType !== "video_embed") {
+        return;
+      }
+
+      const mediaRaw = Array.isArray(block.media) ? block.media : [];
+      const media = mediaRaw.filter((item): item is MediaItem => !!item && typeof item === "object");
+      if (media.length === 0) {
+        return;
+      }
+
+      const primaryMedia =
+        media.find((item) => {
+          const role = toText(item.role).trim().toLowerCase();
+          return role === "video" || role === "embed";
+        }) ?? media[0];
+
+      const video = toText(primaryMedia.url).trim();
+      if (!video) {
+        return;
+      }
+
+      const poster =
+        media.find((item) => toText(item.role).trim().toLowerCase() === "poster") ??
+        media.find((item) => toText(item.role).trim().toLowerCase() === "image");
+
+      const thumbnailAtRaw = primaryMedia.thumbnail_at;
+      const thumbnailAt =
+        typeof thumbnailAtRaw === "number" && Number.isFinite(thumbnailAtRaw) && thumbnailAtRaw >= 0
+          ? thumbnailAtRaw
+          : undefined;
+      const slot =
+        typeof block.index === "number" && Number.isFinite(block.index) && block.index > 0 ? Math.floor(block.index) : i + 1;
+      const blockCopy = toText(block.copy).trim();
+      const indexedCopy = blockTextBySlot.get(slot) ?? "";
+      const orderedCopy = indexedCopy ? "" : (orderedBlockText[nextOrderedCopyIndex] ?? "");
+      const copy = blockCopy || indexedCopy || orderedCopy;
+      if (!blockCopy && !indexedCopy && orderedCopy) {
+        nextOrderedCopyIndex += 1;
+      }
+
+      blockClips.push({
+        slot,
+        video,
+        thumb: toText(poster?.url).trim(),
+        copy,
+        thumbnailAt,
+      });
+    });
+
+    if (blockClips.length > 0) {
+      const merged = blockClips.map((clip) => {
+        const key = String(clip.slot).padStart(2, "0");
+        const nonPadded = String(clip.slot);
+        const legacyCopy = toText(
+          page[`copy-${key}`] ?? page[`copy${key}`] ?? page[`copy-${nonPadded}`] ?? page[`copy${nonPadded}`],
+        ).trim();
+        return clip.copy ? clip : { ...clip, copy: legacyCopy };
+      });
+      return merged.sort((a, b) => a.slot - b.slot);
+    }
+  }
+
   const clips: Clip[] = [];
   for (let slot = 1; slot <= 8; slot += 1) {
     const key = String(slot).padStart(2, "0");
@@ -88,7 +211,7 @@ function buildClips(page: PageRow | null): Clip[] {
       continue;
     }
 
-    clips.push({ slot, video, thumb, copy });
+    clips.push({ slot, video, thumb, copy, thumbnailAt: parseTimecodeSeconds(thumb) ?? undefined });
   }
 
   return clips;
@@ -220,7 +343,7 @@ export function ProjectPageOverlayWindow({ pageId, onClose }: { pageId: string; 
     const started = startedSlots.has(clip.slot);
     const embed = toYouTubeEmbedUrl(clip.video);
     const thumbAsUrl = isLikelyUrl(clip.thumb) ? clip.thumb : "";
-    const thumbAsTime = thumbAsUrl ? null : parseTimecodeSeconds(clip.thumb);
+    const thumbAsTime = typeof clip.thumbnailAt === "number" ? clip.thumbnailAt : thumbAsUrl ? null : parseTimecodeSeconds(clip.thumb);
 
     if (started) {
       if (embed) {

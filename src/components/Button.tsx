@@ -29,7 +29,7 @@ export function Button(props: ButtonProps) {
   const { children, className, variant = "primary" } = props;
   const classes = cx(styles.button, styles[variant], className);
 
-  if ("href" in props && props.href) {
+  if (typeof props.href === "string") {
     const { href, ...anchorProps } = props;
     return (
       <a href={href} className={classes} {...anchorProps}>
@@ -38,7 +38,7 @@ export function Button(props: ButtonProps) {
     );
   }
 
-  const { type = "button", ...buttonProps } = props;
+  const { type = "button", ...buttonProps } = props as ButtonAsButtonProps;
 
   return (
     <button type={type} className={classes} {...buttonProps}>

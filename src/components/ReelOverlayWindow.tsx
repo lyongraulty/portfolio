@@ -14,27 +14,27 @@ function closeToPreviousOrHome(router: ReturnType<typeof useRouter>) {
 const REEL_VIDEO_URL = "https://res.cloudinary.com/dax2qbori/video/upload/v1772063461/LyonGraulty_reel_2019_sbjx4v.mp4";
 const REEL_THUMBNAIL_URL =
   "https://res.cloudinary.com/dax2qbori/image/upload/v1772047560/NameStill_qs7yvc.jpg";
+const REEL_COPY_FALLBACK =
+  "Title // Client // Role:\n\n\"Con Mi Madre\" // Zoticus // Animation\n\n\"Tomlinson's\" // Mishnoon // Design & Animation\n\n\"Glitch Callout\" // Captive // Animation\n\n\"Tradestation - Fresh Look\" // Black Math // 3D Animation\n\n\"Reach\" // Mishnoon // Design & Animation\n\n\"MTN\" // Personal Work // Design & Animation\n\n\"Idea Energy - unreleased\" // Perfect Form // Design & Animation\n\n\"Package Sensor\" // Captive // Animation\n\n\"Ash Britt\" // Zoticus // Design & Animation\n\n\"Electrolab\" // Zoticus // Design, Lighting, Texture, Camera & Animation\n\n\"Hammer Down\" // Personal Work // Design, Lighting, Texture, Camera, 2D & 3D Animation\n\n\"Tradestation - Discipline\" // Black Math // 3D Animation\n\n\"Universal Returns\" // Captive // Animation\n\n\"Jump\" // Personal Work // Design & Animation\n\n\"2019 Title Sequence\" // Personal Work // Design, Lighting, Texture, Camera & Animation\n\nMusic: \"Same Old Shit\" - Mulle Beats";
 
 type ReelPage = {
-  page?: string | number;
-  title?: string;
-  [key: string]: string | number | undefined;
+  page?: string | number | null;
+  title?: string | null;
+  blocks?: unknown;
+  [key: string]: unknown;
 };
 
-function pickPageString(page: ReelPage | null, keys: string[], fallback: string): string {
-  if (!page) {
-    return fallback;
-  }
+type ReelMediaItem = {
+  role?: string;
+  url?: string;
+};
 
-  for (const key of keys) {
-    const value = page[key];
-    if (typeof value === "string" && value.trim().length > 0) {
-      return value;
-    }
-  }
-
-  return fallback;
-}
+type ReelBlock = {
+  type?: string;
+  title?: string;
+  copy?: string;
+  media?: ReelMediaItem[];
+};
 
 function normalizePages(data: unknown): ReelPage[] {
   if (!data || typeof data !== "object") {
@@ -45,6 +45,56 @@ function normalizePages(data: unknown): ReelPage[] {
     return [];
   }
   return rawPages.filter((entry) => entry && typeof entry === "object") as ReelPage[];
+}
+
+function extractReelFromBlocks(page: ReelPage | null) {
+  if (!page || !Array.isArray(page.blocks)) {
+    return null;
+  }
+
+  const blocks = page.blocks
+    .filter((item): item is Record<string, unknown> => !!item && typeof item === "object")
+    .map((item) => ({
+      type: typeof item.type === "string" ? item.type : "",
+      title: typeof item.title === "string" ? item.title : "",
+      copy: typeof item.copy === "string" ? item.copy : "",
+      media: Array.isArray(item.media)
+        ? item.media
+            .filter((media): media is Record<string, unknown> => !!media && typeof media === "object")
+            .map((media) => ({
+              role: typeof media.role === "string" ? media.role.toLowerCase() : "",
+              url: typeof media.url === "string" ? media.url : "",
+            }))
+        : [],
+    })) as ReelBlock[];
+
+  if (blocks.length === 0) {
+    return null;
+  }
+
+  const videoBlock =
+    blocks.find((block) => {
+      return block.type === "video" || block.type === "video_embed";
+    }) ?? null;
+
+  if (!videoBlock) {
+    return null;
+  }
+
+  const media = Array.isArray(videoBlock.media) ? videoBlock.media : [];
+  const primaryMedia = media.find((item) => item.role === "video" || item.role === "embed") ?? media[0];
+  const poster = media.find((item) => item.role === "poster" || item.role === "image") ?? null;
+  const textBlock =
+    blocks.find((block) => {
+      return block.type === "text" && typeof block.copy === "string" && block.copy.trim().length > 0;
+    }) ?? null;
+
+  const video = typeof primaryMedia?.url === "string" ? primaryMedia.url.trim() : "";
+  const thumb = typeof poster?.url === "string" ? poster.url.trim() : "";
+  const copy = typeof textBlock?.copy === "string" ? textBlock.copy : "";
+  const title = (typeof videoBlock.title === "string" && videoBlock.title.trim().length > 0 ? videoBlock.title : "") || "";
+
+  return video ? { video, thumb, copy, title } : null;
 }
 
 function getReelPage(pages: ReelPage[]): ReelPage | null {
@@ -104,15 +154,15 @@ export function ReelOverlayWindow({ onClose }: { onClose?: () => void }) {
   }, [router]);
 
   const handleClose = onClose ?? defaultClose;
-  const reelTitle = pageData?.title ?? "MOTION REEL";
-  const reelVideoSource = pickPageString(pageData, ["video-01"], REEL_VIDEO_URL);
+  const blockData = extractReelFromBlocks(pageData);
+  const reelTitle =
+    (typeof pageData?.title === "string" && pageData.title.trim().length > 0 ? pageData.title : "") ||
+    blockData?.title ||
+    "MOTION REEL";
+  const reelVideoSource = blockData?.video || REEL_VIDEO_URL;
   const reelYouTubeEmbed = toYouTubeEmbedUrl(reelVideoSource);
-  const reelThumb = pickPageString(pageData, ["videothumb-01", "video-01-thumb"], REEL_THUMBNAIL_URL);
-  const reelCopy = pickPageString(
-    pageData,
-    ["copy-01"],
-    "Title // Client // Role:\n\n\"Con Mi Madre\" // Zoticus // Animation\n\n\"Tomlinson's\" // Mishnoon // Design & Animation\n\n\"Glitch Callout\" // Captive // Animation\n\n\"Tradestation - Fresh Look\" // Black Math // 3D Animation\n\n\"Reach\" // Mishnoon // Design & Animation\n\n\"MTN\" // Personal Work // Design & Animation\n\n\"Idea Energy - unreleased\" // Perfect Form // Design & Animation\n\n\"Package Sensor\" // Captive // Animation\n\n\"Ash Britt\" // Zoticus // Design & Animation\n\n\"Electrolab\" // Zoticus // Design, Lighting, Texture, Camera & Animation\n\n\"Hammer Down\" // Personal Work // Design, Lighting, Texture, Camera, 2D & 3D Animation\n\n\"Tradestation - Discipline\" // Black Math // 3D Animation\n\n\"Universal Returns\" // Captive // Animation\n\n\"Jump\" // Personal Work // Design & Animation\n\n\"2019 Title Sequence\" // Personal Work // Design, Lighting, Texture, Camera & Animation\n\nMusic: \"Same Old Shit\" - Mulle Beats",
-  );
+  const reelThumb = blockData?.thumb || REEL_THUMBNAIL_URL;
+  const reelCopy = blockData?.copy || REEL_COPY_FALLBACK;
 
   useEffect(() => {
     let isMounted = true;

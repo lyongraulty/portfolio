@@ -3,7 +3,7 @@ import { ModalLink } from "@/components/ModalLink";
 import { isLikelyVideoUrl } from "@/lib/mediaUrl";
 import { getPages } from "../../fetch/getPages";
 
-function formatIndex(value: string | number | undefined): string {
+function formatIndex(value: string | number | null | undefined): string {
   const numeric = Number(value);
   if (!Number.isFinite(numeric)) {
     return "01";
@@ -14,6 +14,7 @@ function formatIndex(value: string | number | undefined): string {
 export async function ReelSection() {
   const pages = await getPages();
   const reelPage = pages.find((page) => String(page.page ?? "") === "1") ?? pages[0];
+  const reelPageId = String(reelPage?.page ?? "1");
   const title = String(reelPage?.title ?? "MOTION REEL");
   const buttonText = String(reelPage?.["button-text"] ?? "View Reel");
   const index = formatIndex(reelPage?.page);
@@ -59,7 +60,7 @@ export async function ReelSection() {
       <article className="reel-shell">
         <h2 id="reel-heading">{title}</h2>
         <p className="reel-action">
-          <ModalLink className="reel-button type-button" modal="reel">
+          <ModalLink className="reel-button type-button" modal="project-page" page={reelPageId}>
             {buttonText}
           </ModalLink>
         </p>

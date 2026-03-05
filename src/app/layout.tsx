@@ -64,7 +64,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
       }
       return [`--${normalizedKey}`, String(value)] as const;
     })
-    .filter((entry): entry is readonly [string, string] => entry !== null);
+    .filter((entry): entry is readonly [`--${string}`, string] => entry !== null);
 
   const cssVarStyle = Object.fromEntries(cssVars) as React.CSSProperties;
   const fontStylesheets = Array.from(new Set(fontList.map(toGoogleFontsHref)));

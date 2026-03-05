@@ -1,6 +1,6 @@
 import "server-only";
 const PAGES_URL =
-  "https://script.google.com/macros/s/AKfycbyvBD7Qu9wz1f2kZreqiLyrSlpvAhXbQaPb5OtqsWgD4a1VxCeklB_y69AStbRTBu2oBQ/exec";
+  "https://script.google.com/macros/s/AKfycbxKnaAl13wVoGXH7tJOuCvMaQd1rnRtnyGZw-gwI0Gtaw_ntbCFhkMO0AYHFJcNAozziQ/exec";
 
 export type PageRow = Record<string, string | number | null | undefined>;
 

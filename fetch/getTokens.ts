@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 
 const TOKENS_URL =
-  "https://script.google.com/macros/s/AKfycbyvBD7Qu9wz1f2kZreqiLyrSlpvAhXbQaPb5OtqsWgD4a1VxCeklB_y69AStbRTBu2oBQ/exec";
+  "https://script.google.com/macros/s/AKfycbxKnaAl13wVoGXH7tJOuCvMaQd1rnRtnyGZw-gwI0Gtaw_ntbCFhkMO0AYHFJcNAozziQ/exec";
 const FALLBACK_PATH = path.join(process.cwd(), "fetch", "appscript.json");
 
 export type TokenMap = Record<string, string | number>;
@@ -144,10 +144,9 @@ function toFlatTokenMap(data: JsonObject): TokenMap {
   const tokens: TokenMap = {};
 
   for (const [key, value] of Object.entries(data)) {
-    if (value === null || value === undefined || typeof value === "object") {
-      continue;
+    if (typeof value === "string" || typeof value === "number") {
+      tokens[key] = value;
     }
-    tokens[key] = value;
   }
 
   return tokens;
