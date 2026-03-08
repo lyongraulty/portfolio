@@ -1,6 +1,6 @@
 import { ProjectCard } from "@/components/ProjectCard";
 import { Section } from "@/components/Section";
-import { isLikelyVideoUrl } from "@/lib/mediaUrl";
+import { isLikelyVideoUrl, toCmsMediaUrl } from "@/lib/mediaUrl";
 import { getPages, type PageRow } from "../../fetch/getPages";
 
 function toPageString(value: unknown): string {
@@ -42,7 +42,7 @@ function toYouTubeThumb(url: string): string | null {
 }
 
 function getPageCardMedia(page: PageRow): { type: "video" | "image"; src: string } | undefined {
-  const cardBackground = toPageString(page["card-background"] ?? page.cardbackground ?? page["card-background-image"]).trim();
+  const cardBackground = toCmsMediaUrl(page["card-background"] ?? page.cardbackground ?? page["card-background-image"]);
   if (cardBackground) {
     return {
       type: isLikelyVideoUrl(cardBackground) ? "video" : "image",
@@ -72,7 +72,7 @@ function getPageCardMedia(page: PageRow): { type: "video" | "image"; src: string
       return role === "poster" || role === "image";
     }) ?? null;
   if (poster) {
-    const posterUrl = toPageString(poster.url).trim();
+    const posterUrl = toCmsMediaUrl(poster.url);
     if (posterUrl) {
       return { type: "image", src: posterUrl };
     }
@@ -83,7 +83,7 @@ function getPageCardMedia(page: PageRow): { type: "video" | "image"; src: string
       const role = toPageString(item.role).trim().toLowerCase();
       return role === "video" || role === "embed";
     }) ?? media[0];
-  const primaryUrl = toPageString(primary?.url).trim();
+  const primaryUrl = toCmsMediaUrl(primary?.url);
   if (!primaryUrl) {
     return undefined;
   }

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState, type MouseEvent } from "react";
 import { useRouter } from "next/navigation";
+import { toCmsMediaUrl } from "@/lib/mediaUrl";
 
 function closeToPreviousOrHome(router: ReturnType<typeof useRouter>) {
   if (window.history.length > 1) {
@@ -89,8 +90,8 @@ function extractReelFromBlocks(page: ReelPage | null) {
       return block.type === "text" && typeof block.copy === "string" && block.copy.trim().length > 0;
     }) ?? null;
 
-  const video = typeof primaryMedia?.url === "string" ? primaryMedia.url.trim() : "";
-  const thumb = typeof poster?.url === "string" ? poster.url.trim() : "";
+  const video = toCmsMediaUrl(primaryMedia?.url);
+  const thumb = toCmsMediaUrl(poster?.url);
   const copy = typeof textBlock?.copy === "string" ? textBlock.copy : "";
   const title = (typeof videoBlock.title === "string" && videoBlock.title.trim().length > 0 ? videoBlock.title : "") || "";
 

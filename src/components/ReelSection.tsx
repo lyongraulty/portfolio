@@ -1,6 +1,6 @@
 import { Section } from "@/components/Section";
 import { ModalLink } from "@/components/ModalLink";
-import { isLikelyVideoUrl } from "@/lib/mediaUrl";
+import { isLikelyVideoUrl, toCmsMediaUrl } from "@/lib/mediaUrl";
 import { getPages } from "../../fetch/getPages";
 
 function formatIndex(value: string | number | null | undefined): string {
@@ -21,11 +21,9 @@ export async function ReelSection() {
   const description = String(
     reelPage?.["project-copy"] ?? "A tightly edited compilation of recent work - both client and personal",
   );
-  const cardBackground =
-    (reelPage?.["card-background"] as string | undefined) ||
-    (reelPage?.["card_background"] as string | undefined) ||
-    (reelPage?.["card background"] as string | undefined) ||
-    "";
+  const cardBackground = toCmsMediaUrl(
+    reelPage?.["card-background"] ?? reelPage?.["card_background"] ?? reelPage?.["card background"] ?? "",
+  );
   const backgroundType = isLikelyVideoUrl(cardBackground) ? "video" : "image";
   const reelStyle =
     cardBackground && backgroundType === "image" ? { ["--reel-bg" as string]: `url("${cardBackground}")` } : undefined;

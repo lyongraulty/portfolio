@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } from "react";
 import { useRouter } from "next/navigation";
+import { isLikelyVideoUrl, toCmsMediaUrl } from "@/lib/mediaUrl";
 
 type PageRow = Record<string, unknown>;
 
@@ -9,22 +10,74 @@ type MediaItem = {
   url?: unknown;
   role?: unknown;
   thumbnail_at?: unknown;
+  thumbnailAt?: unknown;
+  thumb?: unknown;
+  poster?: unknown;
 };
 
 type BlockItem = {
   index?: unknown;
   type?: unknown;
+  title?: unknown;
+  layout?: unknown;
   copy?: unknown;
+  text?: unknown;
+  body?: unknown;
+  description?: unknown;
   media?: unknown;
+  video?: unknown;
+  url?: unknown;
+  image?: unknown;
 };
 
-type Clip = {
+type ProjectBlock = {
   slot: number;
-  video: string;
-  thumb: string;
+  title: string;
+  layout: string;
   copy: string;
-  thumbnailAt?: number;
+  media: Array<{ url: string; role: string; thumbnailAt?: number }>;
 };
+
+function normalizeLayout(value: unknown): string {
+  return toText(value).trim().toLowerCase().replace(/\s+/g, "-");
+}
+
+function getBlockLayoutClass(layout: string, mediaCount: number): string | undefined {
+  const normalized = normalizeLayout(layout);
+
+  if (!normalized) {
+    return mediaCount > 1 ? "project-media-grid layout-two-up" : undefined;
+  }
+
+  if (normalized === "single" || normalized === "one-up" || normalized === "full") {
+    return "project-media-grid layout-single";
+  }
+
+  if (normalized === "two-up" || normalized === "2-up" || normalized === "2up" || normalized === "split") {
+    return "project-media-grid layout-two-up";
+  }
+
+  if (normalized === "three-up" || normalized === "3-up" || normalized === "3up" || normalized === "triple") {
+    return "project-media-grid layout-three-up";
+  }
+
+  if (
+    normalized === "single" ||
+    normalized === "two-column" ||
+    normalized === "three-column" ||
+    normalized === "grid" ||
+    normalized === "carousel" ||
+    normalized === "filmstrip" ||
+    normalized === "masonry" ||
+    normalized === "stack" ||
+    normalized === "media-left" ||
+    normalized === "media-right"
+  ) {
+    return `project-media-grid layout-${normalized}`;
+  }
+
+  return mediaCount > 1 ? "project-media-grid layout-two-up" : undefined;
+}
 
 function closeToPreviousOrHome(router: ReturnType<typeof useRouter>) {
   if (window.history.length > 1) {
@@ -75,176 +128,64 @@ function toYouTubeEmbedUrl(url: string): string | null {
   }
 }
 
-function buildClips(page: PageRow | null): Clip[] {
-  if (!page) {
+function toBlockSlot(value: unknown, fallback: number): number {
+  if (typeof value === "number" && Number.isFinite(value) && value > 0) {
+    return Math.floor(value);
+  }
+  const parsed = Number(toText(value).trim());
+  if (Number.isFinite(parsed) && parsed > 0) {
+    return Math.floor(parsed);
+  }
+  return fallback;
+}
+
+function normalizeBlockMedia(block: BlockItem): Array<{ url: string; role: string; thumbnailAt?: number }> {
+  const mediaRaw = Array.isArray(block.media) ? block.media : [];
+  const media = mediaRaw.filter((item): item is MediaItem => !!item && typeof item === "object");
+
+  const fromMedia = media
+    .map((item) => ({
+      url: toCmsMediaUrl(item.url),
+      role: toText(item.role).trim().toLowerCase(),
+      thumbnailAt:
+        typeof item.thumbnail_at === "number" && Number.isFinite(item.thumbnail_at) && item.thumbnail_at >= 0
+          ? item.thumbnail_at
+          : typeof item.thumbnailAt === "number" && Number.isFinite(item.thumbnailAt) && item.thumbnailAt >= 0
+            ? item.thumbnailAt
+            : undefined,
+    }))
+    .filter((item) => !!item.url)
+    .map((item) => ({
+      url: item.url,
+      role: item.role || (isLikelyVideoUrl(item.url) ? "video" : "image"),
+      thumbnailAt: item.thumbnailAt,
+    }));
+
+  if (fromMedia.length > 0) {
+    return fromMedia;
+  }
+
+  const single = toCmsMediaUrl(block.video ?? block.url ?? block.image);
+  if (!single) {
     return [];
   }
 
-  const blocksRaw = page.blocks;
-  if (Array.isArray(blocksRaw)) {
-    const blockClips: Clip[] = [];
-    const blockTextBySlot = new Map<number, string>();
-    const orderedBlockText: string[] = [];
-
-    const toBlockSlot = (value: unknown, fallback: number): number => {
-      if (typeof value === "number" && Number.isFinite(value) && value > 0) {
-        return Math.floor(value);
-      }
-      const parsed = Number(toText(value).trim());
-      if (Number.isFinite(parsed) && parsed > 0) {
-        return Math.floor(parsed);
-      }
-      return fallback;
-    };
-
-    blocksRaw.forEach((rawBlock, i) => {
-      if (!rawBlock || typeof rawBlock !== "object") {
-        return;
-      }
-      const block = rawBlock as BlockItem & { text?: unknown; body?: unknown; description?: unknown };
-      const blockType = toText(block.type).trim().toLowerCase();
-      if (blockType === "video" || blockType === "video_embed") {
-        return;
-      }
-
-      const copy = toText(block.copy ?? block.text ?? block.body ?? block.description).trim();
-      if (!copy) {
-        return;
-      }
-
-      const slot = toBlockSlot(block.index, i + 1);
-      if (!blockTextBySlot.has(slot)) {
-        blockTextBySlot.set(slot, copy);
-      }
-      orderedBlockText.push(copy);
-    });
-
-    let nextOrderedCopyIndex = 0;
-
-    blocksRaw.forEach((rawBlock, i) => {
-      if (!rawBlock || typeof rawBlock !== "object") {
-        return;
-      }
-      const block = rawBlock as BlockItem;
-      const blockType = toText(block.type).trim();
-      if (blockType !== "video" && blockType !== "video_embed") {
-        return;
-      }
-
-      const mediaRaw = Array.isArray(block.media) ? block.media : [];
-      const media = mediaRaw.filter((item): item is MediaItem => !!item && typeof item === "object");
-      if (media.length === 0) {
-        return;
-      }
-
-      const primaryMedia =
-        media.find((item) => {
-          const role = toText(item.role).trim().toLowerCase();
-          return role === "video" || role === "embed";
-        }) ?? media[0];
-
-      const video = toText(primaryMedia.url).trim();
-      if (!video) {
-        return;
-      }
-
-      const poster =
-        media.find((item) => toText(item.role).trim().toLowerCase() === "poster") ??
-        media.find((item) => toText(item.role).trim().toLowerCase() === "image");
-
-      const thumbnailAtRaw = primaryMedia.thumbnail_at;
-      const thumbnailAt =
-        typeof thumbnailAtRaw === "number" && Number.isFinite(thumbnailAtRaw) && thumbnailAtRaw >= 0
-          ? thumbnailAtRaw
-          : undefined;
-      const slot =
-        typeof block.index === "number" && Number.isFinite(block.index) && block.index > 0 ? Math.floor(block.index) : i + 1;
-      const blockCopy = toText(block.copy).trim();
-      const indexedCopy = blockTextBySlot.get(slot) ?? "";
-      const orderedCopy = indexedCopy ? "" : (orderedBlockText[nextOrderedCopyIndex] ?? "");
-      const copy = blockCopy || indexedCopy || orderedCopy;
-      if (!blockCopy && !indexedCopy && orderedCopy) {
-        nextOrderedCopyIndex += 1;
-      }
-
-      blockClips.push({
-        slot,
-        video,
-        thumb: toText(poster?.url).trim(),
-        copy,
-        thumbnailAt,
-      });
-    });
-
-    if (blockClips.length > 0) {
-      const merged = blockClips.map((clip) => {
-        const key = String(clip.slot).padStart(2, "0");
-        const nonPadded = String(clip.slot);
-        const legacyCopy = toText(
-          page[`copy-${key}`] ?? page[`copy${key}`] ?? page[`copy-${nonPadded}`] ?? page[`copy${nonPadded}`],
-        ).trim();
-        return clip.copy ? clip : { ...clip, copy: legacyCopy };
-      });
-      return merged.sort((a, b) => a.slot - b.slot);
-    }
-  }
-
-  const clips: Clip[] = [];
-  for (let slot = 1; slot <= 8; slot += 1) {
-    const key = String(slot).padStart(2, "0");
-    const nonPadded = String(slot);
-
-    const video = toText(
-      page[`video-${key}`] ?? page[`video${key}`] ?? page[`video-${nonPadded}`] ?? page[`video${nonPadded}`],
-    ).trim();
-    const thumb = toText(
-      page[`videothumb-${key}`] ??
-        page[`videothumb${key}`] ??
-        page[`video-${key}-thumb`] ??
-        page[`videothumb-${nonPadded}`] ??
-        page[`videothumb${nonPadded}`] ??
-        page[`video-${nonPadded}-thumb`],
-    ).trim();
-    const copy = toText(page[`copy-${key}`] ?? page[`copy${key}`] ?? page[`copy-${nonPadded}`] ?? page[`copy${nonPadded}`]).trim();
-
-    if (!video) {
-      continue;
-    }
-
-    clips.push({ slot, video, thumb, copy, thumbnailAt: parseTimecodeSeconds(thumb) ?? undefined });
-  }
-
-  return clips;
+  return [{ url: single, role: isLikelyVideoUrl(single) ? "video" : "image", thumbnailAt: undefined }];
 }
 
-function isLikelyUrl(value: string): boolean {
-  return /^https?:\/\//i.test(value);
+function isPlayableMedia(url: string, role: string): boolean {
+  return role === "video" || role === "embed" || !!toYouTubeEmbedUrl(url) || isLikelyVideoUrl(url);
 }
 
-function parseTimecodeSeconds(value: string): number | null {
-  const trimmed = value.trim();
-  if (!trimmed) {
-    return null;
-  }
+type RenderableMedia = {
+  key: string;
+  url: string;
+  posterUrl: string;
+  playable: boolean;
+  thumbnailAt?: number;
+};
 
-  const asNumber = Number(trimmed);
-  if (Number.isFinite(asNumber) && asNumber >= 0) {
-    return asNumber;
-  }
-
-  const parts = trimmed.split(":").map((part) => Number(part));
-  if (parts.length < 2 || parts.length > 3 || parts.some((part) => !Number.isFinite(part) || part < 0)) {
-    return null;
-  }
-
-  if (parts.length === 2) {
-    return parts[0] * 60 + parts[1];
-  }
-
-  return parts[0] * 3600 + parts[1] * 60 + parts[2];
-}
-
-function RandomVideoCover({ src, seekSeconds }: { src: string; seekSeconds?: number | null }) {
+function TimecodeVideoThumb({ src, seconds, title }: { src: string; seconds: number; title: string }) {
   const ref = useRef<HTMLVideoElement | null>(null);
 
   useEffect(() => {
@@ -255,29 +196,184 @@ function RandomVideoCover({ src, seekSeconds }: { src: string; seekSeconds?: num
 
     const onLoaded = () => {
       const duration = Number.isFinite(el.duration) ? el.duration : 0;
-      if (typeof seekSeconds === "number" && Number.isFinite(seekSeconds) && seekSeconds >= 0) {
-        const target = duration > 0 ? Math.min(seekSeconds, Math.max(0, duration - 0.1)) : seekSeconds;
-        el.currentTime = target;
-        return;
-      }
-
-      const max = Math.max(0.2, duration * 0.8);
-      el.currentTime = Math.random() * max;
+      const target = duration > 0 ? Math.min(seconds, Math.max(0, duration - 0.1)) : seconds;
+      el.currentTime = Math.max(0, target);
     };
 
     el.addEventListener("loadedmetadata", onLoaded);
     return () => {
       el.removeEventListener("loadedmetadata", onLoaded);
     };
-  }, [src, seekSeconds]);
+  }, [seconds, src]);
 
-  return <video ref={ref} src={src} className="reel-cover-preview" muted playsInline preload="metadata" />;
+  return <video ref={ref} src={src} className="project-media-video" preload="metadata" muted playsInline aria-label={title} />;
+}
+
+function AutoPlayVideo({ src, posterUrl }: { src: string; posterUrl: string }) {
+  const ref = useRef<HTMLVideoElement | null>(null);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) {
+      return;
+    }
+
+    const tryPlay = async () => {
+      try {
+        await el.play();
+      } catch {
+        // If autoplay is blocked, controls remain available for manual start.
+      }
+    };
+
+    void tryPlay();
+  }, [src]);
+
+  return <video ref={ref} src={src} className="project-media-video" preload="metadata" playsInline controls autoPlay poster={posterUrl} />;
+}
+
+function buildRenderableMedia(block: ProjectBlock): RenderableMedia[] {
+  const posterIndices = block.media
+    .map((item, index) => ({ role: item.role, index }))
+    .filter((item) => item.role === "poster" || item.role === "thumb")
+    .map((item) => item.index);
+  const usedPosterIndices = new Set<number>();
+  const renderables: RenderableMedia[] = [];
+
+  block.media.forEach((item, index) => {
+    const playable = isPlayableMedia(item.url, item.role);
+    const isPosterOnly = item.role === "poster" || item.role === "thumb";
+    if (isPosterOnly) {
+      return;
+    }
+
+    let posterUrl = "";
+    if (playable && posterIndices.length > 0) {
+      const nextPoster = posterIndices.find((posterIndex) => posterIndex > index && !usedPosterIndices.has(posterIndex));
+      const prevPoster =
+        [...posterIndices].reverse().find((posterIndex) => posterIndex < index && !usedPosterIndices.has(posterIndex)) ?? null;
+      const chosenPosterIndex = nextPoster ?? prevPoster ?? posterIndices.find((posterIndex) => !usedPosterIndices.has(posterIndex));
+      if (typeof chosenPosterIndex === "number") {
+        usedPosterIndices.add(chosenPosterIndex);
+        posterUrl = block.media[chosenPosterIndex]?.url ?? "";
+      }
+    }
+
+    renderables.push({
+      key: `${block.slot}-${index}-${item.url}`,
+      url: item.url,
+      posterUrl,
+      playable,
+      thumbnailAt: item.thumbnailAt,
+    });
+  });
+
+  return renderables;
+}
+
+function renderStartedMedia(url: string, title: string, posterUrl = "") {
+  const embed = toYouTubeEmbedUrl(url);
+  if (embed) {
+    return (
+      <iframe
+        src={embed}
+        className="project-media-iframe"
+        title={`${title} media`}
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+        referrerPolicy="strict-origin-when-cross-origin"
+        allowFullScreen
+      />
+    );
+  }
+
+  if (isLikelyVideoUrl(url)) {
+    return <AutoPlayVideo src={url} posterUrl={posterUrl} />;
+  }
+
+  return <img src={url} className="project-media-image" alt={`${title} media`} />;
+}
+
+function renderMediaPreview(url: string, posterUrl: string, title: string, thumbnailAt?: number) {
+  if (posterUrl) {
+    return <img src={posterUrl} className="project-media-image" alt={`${title} thumbnail`} />;
+  }
+
+  if (isLikelyVideoUrl(url)) {
+    if (typeof thumbnailAt === "number" && Number.isFinite(thumbnailAt) && thumbnailAt >= 0) {
+      return <TimecodeVideoThumb src={url} seconds={thumbnailAt} title={`${title} thumbnail`} />;
+    }
+    return <video src={url} className="project-media-video" preload="metadata" muted playsInline />;
+  }
+
+  return <img src={url} className="project-media-image" alt={`${title} media`} />;
+}
+
+function renderMedia(url: string, title: string, posterUrl = "") {
+  return renderStartedMedia(url, title, posterUrl);
+}
+
+function buildProjectBlocks(page: PageRow | null): ProjectBlock[] {
+  if (!page) {
+    return [];
+  }
+
+  const blocksRaw = page.blocks;
+  if (Array.isArray(blocksRaw)) {
+    const blocks = blocksRaw
+      .filter((raw): raw is BlockItem => !!raw && typeof raw === "object")
+      .map((block, i) => {
+        const slot = toBlockSlot(block.index, i + 1);
+        const title = toText(block.title).trim();
+        const layout = normalizeLayout(block.layout);
+        const copy = toText(block.copy ?? block.text ?? block.body ?? block.description).trim();
+        const media = normalizeBlockMedia(block);
+        return { slot, title, layout, copy, media } satisfies ProjectBlock;
+      })
+      .filter((block) => block.media.length > 0 || block.title.length > 0 || block.copy.length > 0)
+      .sort((a, b) => a.slot - b.slot);
+
+    if (blocks.length > 0) {
+      return blocks;
+    }
+  }
+
+  const legacyBlocks: ProjectBlock[] = [];
+  for (let slot = 1; slot <= 8; slot += 1) {
+    const key = String(slot).padStart(2, "0");
+    const nonPadded = String(slot);
+
+    const video = toCmsMediaUrl(
+      page[`video-${key}`] ?? page[`video${key}`] ?? page[`video-${nonPadded}`] ?? page[`video${nonPadded}`],
+    );
+    const title = toText(
+      page[`title-${key}`] ?? page[`title${key}`] ?? page[`title-${nonPadded}`] ?? page[`title${nonPadded}`],
+    ).trim();
+    const layout = normalizeLayout(
+      page[`layout-${key}`] ?? page[`layout${key}`] ?? page[`layout-${nonPadded}`] ?? page[`layout${nonPadded}`],
+    );
+    const copy = toText(page[`copy-${key}`] ?? page[`copy${key}`] ?? page[`copy-${nonPadded}`] ?? page[`copy${nonPadded}`]).trim();
+
+    if (!video && !title && !copy) {
+      continue;
+    }
+
+    legacyBlocks.push({
+      slot,
+      title,
+      layout,
+      copy,
+      media: video ? [{ url: video, role: "video" }] : [],
+    });
+  }
+
+  return legacyBlocks;
 }
 
 export function ProjectPageOverlayWindow({ pageId, onClose }: { pageId: string; onClose?: () => void }) {
   const router = useRouter();
   const [pageData, setPageData] = useState<PageRow | null>(null);
-  const [startedSlots, setStartedSlots] = useState<Set<number>>(new Set());
+  const [startedMedia, setStartedMedia] = useState<Set<string>>(new Set());
+  const [carouselIndexBySlot, setCarouselIndexBySlot] = useState<Record<number, number>>({});
 
   const defaultClose = useCallback(() => {
     closeToPreviousOrHome(router);
@@ -308,15 +404,14 @@ export function ProjectPageOverlayWindow({ pageId, onClose }: { pageId: string; 
     return () => {
       isMounted = false;
     };
-  }, [pageId]);
+  }, [pageId, setPageData]);
 
-  const clips = useMemo(() => buildClips(pageData), [pageData]);
+  const blocks = useMemo(() => buildProjectBlocks(pageData), [pageData]);
   const title = toText(pageData?.title).trim() || "PROJECT";
-  const isProjectTwo = pageId.trim() === "2";
-
   useEffect(() => {
-    setStartedSlots(new Set());
-  }, [pageId, clips.length]);
+    setStartedMedia(new Set());
+    setCarouselIndexBySlot({});
+  }, [pageId]);
 
   const closeOverlay = useCallback(() => {
     handleClose();
@@ -339,82 +434,136 @@ export function ProjectPageOverlayWindow({ pageId, onClose }: { pageId: string; 
     }
   };
 
-  const renderClipMedia = (clip: Clip) => {
-    const started = startedSlots.has(clip.slot);
-    const embed = toYouTubeEmbedUrl(clip.video);
-    const thumbAsUrl = isLikelyUrl(clip.thumb) ? clip.thumb : "";
-    const thumbAsTime = typeof clip.thumbnailAt === "number" ? clip.thumbnailAt : thumbAsUrl ? null : parseTimecodeSeconds(clip.thumb);
-
-    if (started) {
-      if (embed) {
-        return (
-          <iframe
-            src={embed}
-            className="reel-video"
-            title={`${title} clip ${String(clip.slot).padStart(2, "0")}`}
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-            referrerPolicy="strict-origin-when-cross-origin"
-            allowFullScreen
-          />
-        );
-      }
-      return <video src={clip.video} className="reel-video" preload="metadata" playsInline controls autoPlay />;
-    }
-
-    return (
-      <button
-        type="button"
-        className="reel-cover-button"
-        onClick={() => {
-          setStartedSlots((prev) => {
-            const next = new Set(prev);
-            next.add(clip.slot);
-            return next;
-          });
-        }}
-        aria-label={`Play clip ${String(clip.slot).padStart(2, "0")}`}
-      >
-        {thumbAsUrl ? (
-          <img src={thumbAsUrl} alt={`${title} thumbnail`} />
-        ) : (
-          <RandomVideoCover src={clip.video} seekSeconds={thumbAsTime} />
-        )}
-        <span className="reel-cover-play" aria-hidden="true" />
-      </button>
-    );
-  };
-
-  const primaryClip = isProjectTwo ? (clips[0] ?? null) : null;
-  const remainingClips = isProjectTwo ? clips.slice(1) : clips;
-
   return (
     <div className="window-overlay" role="dialog" aria-modal="true" aria-label={title} onClick={handleBackdropClick}>
       <div className="window-panel reel-window">
         <button type="button" className="window-close type-button" onClick={closeOverlay} aria-label="Close project" />
-        {primaryClip ? (
-          <div className="project-clip-block">
-            <div className="reel-embed">{renderClipMedia(primaryClip)}</div>
-          </div>
-        ) : null}
         <h2 style={{ width: "100%" }}>{title}</h2>
-        {primaryClip?.copy ? (
-          <p className="reel-meta-list type-body" style={{ whiteSpace: "pre-line" }}>
-            {primaryClip.copy}
-          </p>
-        ) : null}
 
-        {remainingClips.map((clip) => {
-          return (
-            <div key={clip.slot} className="project-clip-block">
-              <div className="reel-embed">{renderClipMedia(clip)}</div>
-              {clip.copy ? (
-                <p className="reel-meta-list type-body" style={{ whiteSpace: "pre-line" }}>
-                  {clip.copy}
+        {blocks.map((block) => (
+          <div
+            key={`${block.slot}-${block.title.slice(0, 12)}-${block.copy.slice(0, 12)}`}
+            className={`project-clip-block${block.layout ? ` layout-${block.layout}` : ""}`}
+          >
+            {(() => {
+              const sameAsModalTitle = block.title.trim().toLowerCase() === title.trim().toLowerCase();
+              const hideAsRedundant = block.slot === 1 && sameAsModalTitle;
+              return block.title && !hideAsRedundant ? <h3 className="project-block-title">{block.title}</h3> : null;
+            })()}
+            <div className="project-block-content">
+              {block.media.length > 0 ? (() => {
+              const renderables = buildRenderableMedia(block);
+              const normalizedLayout = normalizeLayout(block.layout);
+              if (normalizedLayout === "carousel" && renderables.length > 0) {
+                const activeIndexRaw = carouselIndexBySlot[block.slot] ?? 0;
+                const activeIndex = Math.min(Math.max(activeIndexRaw, 0), renderables.length - 1);
+                const activeItem = renderables[activeIndex];
+                const label = `${title} block ${String(block.slot).padStart(2, "0")}`;
+                const started = startedMedia.has(activeItem.key);
+
+                const shiftCarousel = (delta: number) => {
+                  setCarouselIndexBySlot((prev) => {
+                    const current = prev[block.slot] ?? 0;
+                    const next = (current + delta + renderables.length) % renderables.length;
+                    return { ...prev, [block.slot]: next };
+                  });
+                };
+
+                return (
+                  <div className="project-carousel">
+                    <div className="project-media-frame">
+                      {activeItem.playable ? (
+                        started ? (
+                          renderMedia(activeItem.url, label, activeItem.posterUrl)
+                        ) : (
+                          <button
+                            type="button"
+                            className="reel-cover-button"
+                            onClick={() => {
+                              setStartedMedia((prev) => {
+                                const next = new Set(prev);
+                                next.add(activeItem.key);
+                                return next;
+                              });
+                            }}
+                            aria-label={`Play ${label}`}
+                          >
+                            {renderMediaPreview(activeItem.url, activeItem.posterUrl, label, activeItem.thumbnailAt)}
+                            <span className="reel-cover-play" aria-hidden="true" />
+                          </button>
+                        )
+                      ) : (
+                        renderMediaPreview(activeItem.url, "", label, activeItem.thumbnailAt)
+                      )}
+                    </div>
+                    {renderables.length > 1 ? (
+                      <>
+                        <button
+                          type="button"
+                          className="project-carousel-nav is-prev"
+                          onClick={() => shiftCarousel(-1)}
+                          aria-label="Previous media"
+                        >
+                          ‹
+                        </button>
+                        <button
+                          type="button"
+                          className="project-carousel-nav is-next"
+                          onClick={() => shiftCarousel(1)}
+                          aria-label="Next media"
+                        >
+                          ›
+                        </button>
+                      </>
+                    ) : null}
+                  </div>
+                );
+              }
+
+              return (
+                <div className={getBlockLayoutClass(block.layout, renderables.length)}>
+                  {renderables.map((item) => {
+                    const label = `${title} block ${String(block.slot).padStart(2, "0")}`;
+                    const started = startedMedia.has(item.key);
+                    return (
+                      <div key={item.key} className="project-media-frame">
+                        {item.playable ? (
+                          started ? (
+                            renderMedia(item.url, label, item.posterUrl)
+                          ) : (
+                            <button
+                              type="button"
+                              className="reel-cover-button"
+                              onClick={() => {
+                                setStartedMedia((prev) => {
+                                  const next = new Set(prev);
+                                  next.add(item.key);
+                                  return next;
+                                });
+                              }}
+                              aria-label={`Play ${label}`}
+                            >
+                          {renderMediaPreview(item.url, item.posterUrl, label, item.thumbnailAt)}
+                          <span className="reel-cover-play" aria-hidden="true" />
+                        </button>
+                      )
+                    ) : (
+                      renderMediaPreview(item.url, "", label, item.thumbnailAt)
+                    )}
+                  </div>
+                );
+                  })}
+                </div>
+              );
+              })() : null}
+              {block.copy ? (
+                <p className="reel-meta-list type-body project-block-copy" style={{ whiteSpace: "pre-line" }}>
+                  {block.copy}
                 </p>
               ) : null}
             </div>
-          );
-        })}
+          </div>
+        ))}
       </div>
     </div>
   );
