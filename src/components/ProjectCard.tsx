@@ -1,5 +1,6 @@
 import { Container } from "@/components/Container";
 import { ModalLink } from "@/components/ModalLink";
+import { getVideoMimeType, toRenderableMediaUrl } from "@/lib/mediaUrl";
 
 type ProjectCardProps = {
   slug: string;
@@ -29,14 +30,19 @@ export function ProjectCard({
   page,
   media,
 }: ProjectCardProps) {
+  const mediaSrc = toRenderableMediaUrl(media?.src);
+  const mediaMime = media?.type === "video" ? getVideoMimeType(mediaSrc) : undefined;
+
   return (
     <article className="project-card" data-hover-zone="project">
-      {media ? (
+      {media && mediaSrc ? (
         <div className="project-media" aria-hidden="true">
           {media.type === "video" ? (
-            <video src={media.src} autoPlay muted loop playsInline preload="metadata" />
+            <video autoPlay muted loop playsInline preload="metadata">
+              <source src={mediaSrc} type={mediaMime} />
+            </video>
           ) : (
-            <img src={media.src} alt="" />
+            <img src={mediaSrc} alt="" />
           )}
         </div>
       ) : null}

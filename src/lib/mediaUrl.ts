@@ -8,6 +8,39 @@ export function toCmsMediaUrl(value: unknown): string {
   return typeof value === "string" ? value.trim() : "";
 }
 
+export function toRenderableMediaUrl(value: unknown): string {
+  const raw = toCmsMediaUrl(value);
+  if (!raw) {
+    return "";
+  }
+
+  try {
+    const parsed = new URL(raw);
+    parsed.pathname = parsed.pathname
+      .split("/")
+      .map((segment) => encodeURIComponent(decodeURIComponent(segment)))
+      .join("/");
+    return parsed.toString();
+  } catch {
+    return encodeURI(raw);
+  }
+}
+
+export function getVideoMimeType(url: string): string | undefined {
+  const value = toCmsMediaUrl(url).toLowerCase();
+  if (!value) {
+    return undefined;
+  }
+
+  if (value.includes(".webm")) return "video/webm";
+  if (value.includes(".ogv") || value.includes(".ogg")) return "video/ogg";
+  if (value.includes(".mov")) return "video/quicktime";
+  if (value.includes(".m4v")) return "video/x-m4v";
+  if (value.includes(".mp4")) return "video/mp4";
+
+  return undefined;
+}
+
 export function isLikelyVideoUrl(url: string): boolean {
   const value = toCmsMediaUrl(url);
   if (!value) {

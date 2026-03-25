@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState, type MouseEvent } from "react";
 import { useRouter } from "next/navigation";
-import { toCmsMediaUrl } from "@/lib/mediaUrl";
+import { getVideoMimeType, toCmsMediaUrl, toRenderableMediaUrl } from "@/lib/mediaUrl";
+import { getPageBlocks, getPageTitle } from "@/lib/pageData";
 
 function closeToPreviousOrHome(router: ReturnType<typeof useRouter>) {
   if (window.history.length > 1) {
@@ -11,12 +12,6 @@ function closeToPreviousOrHome(router: ReturnType<typeof useRouter>) {
     router.push("/");
   }
 }
-
-const REEL_VIDEO_URL = "https://res.cloudinary.com/dax2qbori/video/upload/v1772063461/LyonGraulty_reel_2019_sbjx4v.mp4";
-const REEL_THUMBNAIL_URL =
-  "https://res.cloudinary.com/dax2qbori/image/upload/v1772047560/NameStill_qs7yvc.jpg";
-const REEL_COPY_FALLBACK =
-  "Title // Client // Role:\n\n\"Con Mi Madre\" // Zoticus // Animation\n\n\"Tomlinson's\" // Mishnoon // Design & Animation\n\n\"Glitch Callout\" // Captive // Animation\n\n\"Tradestation - Fresh Look\" // Black Math // 3D Animation\n\n\"Reach\" // Mishnoon // Design & Animation\n\n\"MTN\" // Personal Work // Design & Animation\n\n\"Idea Energy - unreleased\" // Perfect Form // Design & Animation\n\n\"Package Sensor\" // Captive // Animation\n\n\"Ash Britt\" // Zoticus // Design & Animation\n\n\"Electrolab\" // Zoticus // Design, Lighting, Texture, Camera & Animation\n\n\"Hammer Down\" // Personal Work // Design, Lighting, Texture, Camera, 2D & 3D Animation\n\n\"Tradestation - Discipline\" // Black Math // 3D Animation\n\n\"Universal Returns\" // Captive // Animation\n\n\"Jump\" // Personal Work // Design & Animation\n\n\"2019 Title Sequence\" // Personal Work // Design, Lighting, Texture, Camera & Animation\n\nMusic: \"Same Old Shit\" - Mulle Beats";
 
 type ReelPage = {
   page?: string | number | null;
@@ -49,11 +44,12 @@ function normalizePages(data: unknown): ReelPage[] {
 }
 
 function extractReelFromBlocks(page: ReelPage | null) {
-  if (!page || !Array.isArray(page.blocks)) {
+  const rawBlocks = getPageBlocks(page);
+  if (rawBlocks.length === 0) {
     return null;
   }
 
-  const blocks = page.blocks
+  const blocks = rawBlocks
     .filter((item): item is Record<string, unknown> => !!item && typeof item === "object")
     .map((item) => ({
       type: typeof item.type === "string" ? item.type : "",
@@ -156,14 +152,14 @@ export function ReelOverlayWindow({ onClose }: { onClose?: () => void }) {
 
   const handleClose = onClose ?? defaultClose;
   const blockData = extractReelFromBlocks(pageData);
-  const reelTitle =
-    (typeof pageData?.title === "string" && pageData.title.trim().length > 0 ? pageData.title : "") ||
-    blockData?.title ||
-    "MOTION REEL";
-  const reelVideoSource = blockData?.video || REEL_VIDEO_URL;
+  const reelTitle = getPageTitle(pageData) || blockData?.title || "MOTION REEL";
+  const reelVideoSource = blockData?.video || "";
+  const reelVideoRenderSource = toRenderableMediaUrl(reelVideoSource);
+  const reelVideoMime = getVideoMimeType(reelVideoRenderSource);
   const reelYouTubeEmbed = toYouTubeEmbedUrl(reelVideoSource);
-  const reelThumb = blockData?.thumb || REEL_THUMBNAIL_URL;
-  const reelCopy = blockData?.copy || REEL_COPY_FALLBACK;
+  const reelThumb = blockData?.thumb || "";
+  const reelThumbRenderSource = toRenderableMediaUrl(reelThumb);
+  const reelCopy = blockData?.copy || "";
 
   useEffect(() => {
     let isMounted = true;
@@ -330,12 +326,13 @@ export function ReelOverlayWindow({ onClose }: { onClose?: () => void }) {
               <>
                 <video
                   ref={videoRef}
-                  src={reelVideoSource}
                   className="reel-video"
                   preload="metadata"
                   playsInline
                   onClick={togglePlayback}
-                />
+                >
+                  <source src={reelVideoRenderSource} type={reelVideoMime} />
+                </video>
                 <div className="reel-controls" role="group" aria-label="Video controls">
                   <button type="button" className="reel-control-btn type-button" onClick={togglePlayback}>
                     {isPlaying ? "Pause" : "Play"}
@@ -375,16 +372,19 @@ export function ReelOverlayWindow({ onClose }: { onClose?: () => void }) {
               className="reel-cover-button"
               onClick={startPlayback}
               aria-label="Play motion reel"
+              disabled={!reelYouTubeEmbed && !reelVideoRenderSource}
             >
-              <img src={reelThumb} alt="Motion reel thumbnail" />
+              {reelThumbRenderSource ? <img src={reelThumbRenderSource} alt="Motion reel thumbnail" /> : null}
               <span className="reel-cover-play" aria-hidden="true" />
             </button>
           )}
         </div>
         <h2>{reelTitle}</h2>
-        <p className="reel-meta-list type-body" style={{ whiteSpace: "pre-line" }}>
-          {reelCopy}
-        </p>
+        {reelCopy ? (
+          <p className="reel-meta-list type-body" style={{ whiteSpace: "pre-line" }}>
+            {reelCopy}
+          </p>
+        ) : null}
         <div className="reel-close-wrap">
           <button
             type="button"

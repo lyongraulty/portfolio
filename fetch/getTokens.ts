@@ -1,10 +1,6 @@
 import "server-only";
-import { readFile } from "node:fs/promises";
-import path from "node:path";
 
-const TOKENS_URL =
-  "https://script.google.com/macros/s/AKfycbxKnaAl13wVoGXH7tJOuCvMaQd1rnRtnyGZw-gwI0Gtaw_ntbCFhkMO0AYHFJcNAozziQ/exec";
-const FALLBACK_PATH = path.join(process.cwd(), "fetch", "appscript.json");
+const TOKENS_URL = process.env.GOOGLE_SCRIPT_URL?.trim() ?? "";
 
 export type TokenMap = Record<string, string | number>;
 type TokenRow = Record<string, unknown>;
@@ -140,6 +136,21 @@ function extractTokenRows(data: unknown): TokenRow[] {
   return [];
 }
 
+function extractSchemaEnvelope(data: unknown): JsonObject | null {
+  if (!isObject(data)) {
+    return null;
+  }
+
+  const hasSchemaVersion = typeof data.schema_version === "number" || typeof data.schema_version === "string";
+  const hasTypeTokens = Array.isArray(data["type-tokens"]);
+
+  if (hasSchemaVersion && hasTypeTokens) {
+    return data;
+  }
+
+  return null;
+}
+
 function toFlatTokenMap(data: JsonObject): TokenMap {
   const tokens: TokenMap = {};
 
@@ -245,7 +256,8 @@ async function parseTokens(data: unknown): Promise<TokenMap> {
     return {};
   }
 
-  const rows = extractTokenRows(data);
+  const envelope = extractSchemaEnvelope(data);
+  const rows = extractTokenRows(envelope ?? data);
   if (rows.length > 0) {
     return rowsToTokenMap(rows);
   }
@@ -258,11 +270,14 @@ async function parseTokens(data: unknown): Promise<TokenMap> {
 }
 
 function extractFontList(data: unknown): string[] {
-  if (!isObject(data)) {
+  const envelope = extractSchemaEnvelope(data);
+  const source = envelope ?? data;
+
+  if (!isObject(source)) {
     return [];
   }
 
-  const rawFonts = data["font-list"];
+  const rawFonts = source["font-list"];
   if (!Array.isArray(rawFonts)) {
     return [];
   }
@@ -292,78 +307,36 @@ function extractFontList(data: unknown): string[] {
   return Array.from(new Set(fonts));
 }
 
-async function readFallbackData(): Promise<unknown | null> {
-  try {
-    const raw = await readFile(FALLBACK_PATH, "utf8");
-    return JSON.parse(raw) as unknown;
-  } catch {
-    return null;
-  }
-}
-
-async function readFallbackTokens(): Promise<TokenMap> {
-  const data = await readFallbackData();
-  if (!data) {
-    return {};
-  }
-
-  try {
-    return parseTokens(data);
-  } catch {
-    return {};
-  }
-}
-
-async function readFallbackFontList(): Promise<string[]> {
-  const data = await readFallbackData();
-  if (!data) {
-    return [];
-  }
-
-  return extractFontList(data);
-}
-
 export async function getTokens(): Promise<TokenMap> {
-  try {
-    const response = await fetch(TOKENS_URL, {
-      next: { revalidate: 60 },
-    });
-
-    if (!response.ok) {
-      return readFallbackTokens();
-    }
-
-    const data = (await response.json()) as unknown;
-
-    const parsed = await parseTokens(data);
-    if (Object.keys(parsed).length > 0) {
-      return parsed;
-    }
-    return readFallbackTokens();
-  } catch {
-    return readFallbackTokens();
+  if (!TOKENS_URL) {
+    throw new Error("GOOGLE_SCRIPT_URL is not set. Cannot fetch design tokens.");
   }
+
+  const response = await fetch(TOKENS_URL, {
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error(`Google Script request failed: ${response.status} ${response.statusText}`);
+  }
+
+  const data = (await response.json()) as unknown;
+  return parseTokens(data);
 }
 
 export async function getFontList(): Promise<string[]> {
-  try {
-    const response = await fetch(TOKENS_URL, {
-      next: { revalidate: 60 },
-    });
-
-    if (!response.ok) {
-      return readFallbackFontList();
-    }
-
-    const data = (await response.json()) as unknown;
-    const fonts = extractFontList(data);
-
-    if (fonts.length > 0) {
-      return fonts;
-    }
-
-    return readFallbackFontList();
-  } catch {
-    return readFallbackFontList();
+  if (!TOKENS_URL) {
+    throw new Error("GOOGLE_SCRIPT_URL is not set. Cannot fetch font list.");
   }
+
+  const response = await fetch(TOKENS_URL, {
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error(`Google Script request failed: ${response.status} ${response.statusText}`);
+  }
+
+  const data = (await response.json()) as unknown;
+  return extractFontList(data);
 }

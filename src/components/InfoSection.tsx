@@ -39,7 +39,7 @@ export function InfoSection() {
         </div>
         <div className="info-image">
           <img
-            src="https://res.cloudinary.com/dax2qbori/image/upload/v1772049653/IMG_6413_vitoot.webp"
+            src="https://portfolio-media.b-cdn.net/SYNC/media_various/IMG_6413.webp"
             alt="Portrait of Lyon"
             loading="lazy"
           />
@@ -48,7 +48,7 @@ export function InfoSection() {
       <div className="info-logos-wrap">
         <img
           className="info-logos"
-          src="https://res.cloudinary.com/dax2qbori/image/upload/v1771961076/Logos_Row_Gray_3_dfax1q.png"
+          src="https://portfolio-media.b-cdn.net/SYNC/media_various/Logos_Row_Gray_3.webp"
           alt="Past client logos"
           loading="lazy"
         />

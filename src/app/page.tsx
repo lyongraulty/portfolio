@@ -6,6 +6,8 @@ import { ProjectsSection } from "@/components/ProjectsSection";
 import { ReelSection } from "@/components/ReelSection";
 import { SandboxSectionWide } from "@/components/SandboxSectionWide";
 
+export const dynamic = "force-dynamic";
+
 export default function HomePage() {
   return (
     <>

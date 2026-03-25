@@ -1,6 +1,6 @@
 import "server-only";
-const PAGES_URL =
-  "https://script.google.com/macros/s/AKfycbxKnaAl13wVoGXH7tJOuCvMaQd1rnRtnyGZw-gwI0Gtaw_ntbCFhkMO0AYHFJcNAozziQ/exec";
+
+const PAGES_URL = process.env.GOOGLE_SCRIPT_URL?.trim() ?? "";
 
 export type PageRow = Record<string, string | number | null | undefined>;
 
@@ -61,19 +61,18 @@ function extractPages(data: unknown): PageRow[] {
 }
 
 export async function getPages(): Promise<PageRow[]> {
-  try {
-    const response = await fetch(PAGES_URL, {
-      next: { revalidate: 60 },
-    });
-
-    if (!response.ok) {
-      return [];
-    }
-
-    const data = (await response.json()) as unknown;
-    const pages = extractPages(data);
-    return pages;
-  } catch {
-    return [];
+  if (!PAGES_URL) {
+    throw new Error("GOOGLE_SCRIPT_URL is not set. Cannot fetch page data.");
   }
+
+  const response = await fetch(PAGES_URL, {
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error(`Google Script request failed: ${response.status} ${response.statusText}`);
+  }
+
+  const data = (await response.json()) as unknown;
+  return extractPages(data);
 }

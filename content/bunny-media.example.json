@@ -1,0 +1,45 @@
+[
+  {
+    "slug": "drumwave",
+    "folder": "projects/drumwave",
+    "media": {
+      "card": {
+        "type": "video",
+        "src": "projects/drumwave/cover.mp4"
+      },
+      "blocks": [
+        {
+          "slot": 1,
+          "layout": "single",
+          "title": "Hero Clip",
+          "copy": "",
+          "items": [
+            {
+              "role": "video",
+              "type": "video",
+              "src": "projects/drumwave/reel.mp4"
+            }
+          ]
+        },
+        {
+          "slot": 2,
+          "layout": "two-up",
+          "title": "Stills",
+          "copy": "",
+          "items": [
+            {
+              "role": "image",
+              "type": "image",
+              "src": "projects/drumwave/still-01.png"
+            },
+            {
+              "role": "image",
+              "type": "image",
+              "src": "projects/drumwave/still-02.png"
+            }
+          ]
+        }
+      ]
+    }
+  }
+]

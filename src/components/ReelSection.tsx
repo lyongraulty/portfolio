@@ -1,6 +1,7 @@
 import { Section } from "@/components/Section";
 import { ModalLink } from "@/components/ModalLink";
-import { isLikelyVideoUrl, toCmsMediaUrl } from "@/lib/mediaUrl";
+import { isLikelyVideoUrl } from "@/lib/mediaUrl";
+import { getCardMediaFromBackground, getPageButtonText, getPageProjectCopy, getPageTitle } from "@/lib/pageData";
 import { getPages } from "../../fetch/getPages";
 
 function formatIndex(value: string | number | null | undefined): string {
@@ -15,15 +16,11 @@ export async function ReelSection() {
   const pages = await getPages();
   const reelPage = pages.find((page) => String(page.page ?? "") === "1") ?? pages[0];
   const reelPageId = String(reelPage?.page ?? "1");
-  const title = String(reelPage?.title ?? "MOTION REEL");
-  const buttonText = String(reelPage?.["button-text"] ?? "View Reel");
+  const title = getPageTitle(reelPage) || "MOTION REEL";
+  const buttonText = getPageButtonText(reelPage) || "View Reel";
   const index = formatIndex(reelPage?.page);
-  const description = String(
-    reelPage?.["project-copy"] ?? "A tightly edited compilation of recent work - both client and personal",
-  );
-  const cardBackground = toCmsMediaUrl(
-    reelPage?.["card-background"] ?? reelPage?.["card_background"] ?? reelPage?.["card background"] ?? "",
-  );
+  const description = getPageProjectCopy(reelPage) || "A tightly edited compilation of recent work - both client and personal";
+  const cardBackground = getCardMediaFromBackground(reelPage)?.src ?? "";
   const backgroundType = isLikelyVideoUrl(cardBackground) ? "video" : "image";
   const reelStyle =
     cardBackground && backgroundType === "image" ? { ["--reel-bg" as string]: `url("${cardBackground}")` } : undefined;

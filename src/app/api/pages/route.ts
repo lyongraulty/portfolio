@@ -1,13 +1,16 @@
 import { NextResponse } from "next/server";
 import { getPages } from "../../../../fetch/getPages";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export async function GET() {
   const pages = await getPages();
   return NextResponse.json(
     { pages },
     {
       headers: {
-        "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
+        "Cache-Control": "no-store, max-age=0, must-revalidate",
       },
     },
   );

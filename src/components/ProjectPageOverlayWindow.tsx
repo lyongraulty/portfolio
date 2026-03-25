@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } from "react";
 import { useRouter } from "next/navigation";
-import { isLikelyVideoUrl, toCmsMediaUrl } from "@/lib/mediaUrl";
+import { getVideoMimeType, isLikelyVideoUrl, toCmsMediaUrl, toRenderableMediaUrl } from "@/lib/mediaUrl";
+import { getPageBlocks, getPageTitle, toPageText } from "@/lib/pageData";
 
 type PageRow = Record<string, unknown>;
 
@@ -39,7 +40,7 @@ type ProjectBlock = {
 };
 
 function normalizeLayout(value: unknown): string {
-  return toText(value).trim().toLowerCase().replace(/\s+/g, "-");
+  return toPageText(value).trim().toLowerCase().replace(/\s+/g, "-");
 }
 
 function getBlockLayoutClass(layout: string, mediaCount: number): string | undefined {
@@ -87,10 +88,6 @@ function closeToPreviousOrHome(router: ReturnType<typeof useRouter>) {
   }
 }
 
-function toText(value: unknown): string {
-  return typeof value === "string" ? value : value === null || value === undefined ? "" : String(value);
-}
-
 function normalizePages(data: unknown): PageRow[] {
   if (!data || typeof data !== "object") {
     return [];
@@ -132,7 +129,7 @@ function toBlockSlot(value: unknown, fallback: number): number {
   if (typeof value === "number" && Number.isFinite(value) && value > 0) {
     return Math.floor(value);
   }
-  const parsed = Number(toText(value).trim());
+  const parsed = Number(toPageText(value).trim());
   if (Number.isFinite(parsed) && parsed > 0) {
     return Math.floor(parsed);
   }
@@ -146,7 +143,7 @@ function normalizeBlockMedia(block: BlockItem): Array<{ url: string; role: strin
   const fromMedia = media
     .map((item) => ({
       url: toCmsMediaUrl(item.url),
-      role: toText(item.role).trim().toLowerCase(),
+      role: toPageText(item.role).trim().toLowerCase(),
       thumbnailAt:
         typeof item.thumbnail_at === "number" && Number.isFinite(item.thumbnail_at) && item.thumbnail_at >= 0
           ? item.thumbnail_at
@@ -187,6 +184,8 @@ type RenderableMedia = {
 
 function TimecodeVideoThumb({ src, seconds, title }: { src: string; seconds: number; title: string }) {
   const ref = useRef<HTMLVideoElement | null>(null);
+  const renderSrc = toRenderableMediaUrl(src);
+  const mime = getVideoMimeType(renderSrc);
 
   useEffect(() => {
     const el = ref.current;
@@ -204,13 +203,20 @@ function TimecodeVideoThumb({ src, seconds, title }: { src: string; seconds: num
     return () => {
       el.removeEventListener("loadedmetadata", onLoaded);
     };
-  }, [seconds, src]);
+  }, [seconds, renderSrc]);
 
-  return <video ref={ref} src={src} className="project-media-video" preload="metadata" muted playsInline aria-label={title} />;
+  return (
+    <video ref={ref} className="project-media-video" preload="metadata" muted playsInline aria-label={title}>
+      <source src={renderSrc} type={mime} />
+    </video>
+  );
 }
 
 function AutoPlayVideo({ src, posterUrl }: { src: string; posterUrl: string }) {
   const ref = useRef<HTMLVideoElement | null>(null);
+  const renderSrc = toRenderableMediaUrl(src);
+  const renderPoster = toRenderableMediaUrl(posterUrl);
+  const mime = getVideoMimeType(renderSrc);
 
   useEffect(() => {
     const el = ref.current;
@@ -227,9 +233,13 @@ function AutoPlayVideo({ src, posterUrl }: { src: string; posterUrl: string }) {
     };
 
     void tryPlay();
-  }, [src]);
+  }, [renderSrc]);
 
-  return <video ref={ref} src={src} className="project-media-video" preload="metadata" playsInline controls autoPlay poster={posterUrl} />;
+  return (
+    <video ref={ref} className="project-media-video" preload="metadata" playsInline controls autoPlay poster={renderPoster}>
+      <source src={renderSrc} type={mime} />
+    </video>
+  );
 }
 
 function buildRenderableMedia(block: ProjectBlock): RenderableMedia[] {
@@ -290,22 +300,28 @@ function renderStartedMedia(url: string, title: string, posterUrl = "") {
     return <AutoPlayVideo src={url} posterUrl={posterUrl} />;
   }
 
-  return <img src={url} className="project-media-image" alt={`${title} media`} />;
+  return <img src={toRenderableMediaUrl(url)} className="project-media-image" alt={`${title} media`} />;
 }
 
 function renderMediaPreview(url: string, posterUrl: string, title: string, thumbnailAt?: number) {
   if (posterUrl) {
-    return <img src={posterUrl} className="project-media-image" alt={`${title} thumbnail`} />;
+    return <img src={toRenderableMediaUrl(posterUrl)} className="project-media-image" alt={`${title} thumbnail`} />;
   }
 
   if (isLikelyVideoUrl(url)) {
     if (typeof thumbnailAt === "number" && Number.isFinite(thumbnailAt) && thumbnailAt >= 0) {
       return <TimecodeVideoThumb src={url} seconds={thumbnailAt} title={`${title} thumbnail`} />;
     }
-    return <video src={url} className="project-media-video" preload="metadata" muted playsInline />;
+    const renderSrc = toRenderableMediaUrl(url);
+    const mime = getVideoMimeType(renderSrc);
+    return (
+      <video className="project-media-video" preload="metadata" muted playsInline>
+        <source src={renderSrc} type={mime} />
+      </video>
+    );
   }
 
-  return <img src={url} className="project-media-image" alt={`${title} media`} />;
+  return <img src={toRenderableMediaUrl(url)} className="project-media-image" alt={`${title} media`} />;
 }
 
 function renderMedia(url: string, title: string, posterUrl = "") {
@@ -317,15 +333,15 @@ function buildProjectBlocks(page: PageRow | null): ProjectBlock[] {
     return [];
   }
 
-  const blocksRaw = page.blocks;
-  if (Array.isArray(blocksRaw)) {
-    const blocks = blocksRaw
+  const structuredBlocks = getPageBlocks(page);
+  if (structuredBlocks.length > 0) {
+    const blocks = structuredBlocks
       .filter((raw): raw is BlockItem => !!raw && typeof raw === "object")
       .map((block, i) => {
         const slot = toBlockSlot(block.index, i + 1);
-        const title = toText(block.title).trim();
+        const title = toPageText(block.title).trim();
         const layout = normalizeLayout(block.layout);
-        const copy = toText(block.copy ?? block.text ?? block.body ?? block.description).trim();
+        const copy = toPageText(block.copy ?? block.text ?? block.body ?? block.description).trim();
         const media = normalizeBlockMedia(block);
         return { slot, title, layout, copy, media } satisfies ProjectBlock;
       })
@@ -345,13 +361,13 @@ function buildProjectBlocks(page: PageRow | null): ProjectBlock[] {
     const video = toCmsMediaUrl(
       page[`video-${key}`] ?? page[`video${key}`] ?? page[`video-${nonPadded}`] ?? page[`video${nonPadded}`],
     );
-    const title = toText(
+    const title = toPageText(
       page[`title-${key}`] ?? page[`title${key}`] ?? page[`title-${nonPadded}`] ?? page[`title${nonPadded}`],
     ).trim();
     const layout = normalizeLayout(
       page[`layout-${key}`] ?? page[`layout${key}`] ?? page[`layout-${nonPadded}`] ?? page[`layout${nonPadded}`],
     );
-    const copy = toText(page[`copy-${key}`] ?? page[`copy${key}`] ?? page[`copy-${nonPadded}`] ?? page[`copy${nonPadded}`]).trim();
+    const copy = toPageText(page[`copy-${key}`] ?? page[`copy${key}`] ?? page[`copy-${nonPadded}`] ?? page[`copy${nonPadded}`]).trim();
 
     if (!video && !title && !copy) {
       continue;
@@ -407,7 +423,7 @@ export function ProjectPageOverlayWindow({ pageId, onClose }: { pageId: string; 
   }, [pageId, setPageData]);
 
   const blocks = useMemo(() => buildProjectBlocks(pageData), [pageData]);
-  const title = toText(pageData?.title).trim() || "PROJECT";
+  const title = getPageTitle(pageData) || "PROJECT";
   useEffect(() => {
     setStartedMedia(new Set());
     setCarouselIndexBySlot({});

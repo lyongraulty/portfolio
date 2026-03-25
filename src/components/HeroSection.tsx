@@ -14,7 +14,7 @@ export function HeroSection() {
           preload="metadata"
           aria-label="Autoplay reel background"
         >
-          <source src="https://static1.squarespace.com/static/586488fed482e92ded46e4d8/t/6865d1d0951a0623556bc2ee/1751503316036/Website_Header_V07_12mpbs_2460.mp4" type="video/mp4" />
+          <source src="https://portfolio-media.b-cdn.net/SYNC/media_various/Website_Header_V07_12mpbs_2460.mp4" type="video/mp4" />
         </video>
       </div>
       <div className="hero-overlay">
