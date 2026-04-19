@@ -1,6 +1,9 @@
 import "server-only";
+import siteData from "../content/site-data.json";
 
 const TOKENS_URL = process.env.GOOGLE_SCRIPT_URL?.trim() ?? "";
+const CONTENT_SOURCE = process.env.CONTENT_SOURCE?.trim().toLowerCase() ?? "local";
+const ENABLE_REMOTE_FALLBACK = (process.env.CONTENT_ENABLE_REMOTE_FALLBACK?.trim().toLowerCase() ?? "false") === "true";
 
 export type TokenMap = Record<string, string | number>;
 type TokenRow = Record<string, unknown>;
@@ -308,10 +311,55 @@ function extractFontList(data: unknown): string[] {
 }
 
 export async function getTokens(): Promise<TokenMap> {
-  if (!TOKENS_URL) {
-    throw new Error("GOOGLE_SCRIPT_URL is not set. Cannot fetch design tokens.");
+  if (CONTENT_SOURCE === "remote") {
+    const remoteTokens = await getRemoteTokens();
+    if (Object.keys(remoteTokens).length > 0) {
+      return remoteTokens;
+    }
   }
 
+  const localTokens = await parseTokens(siteData as unknown);
+  if (Object.keys(localTokens).length > 0) {
+    return localTokens;
+  }
+
+  if (ENABLE_REMOTE_FALLBACK) {
+    const remoteTokens = await getRemoteTokens();
+    if (Object.keys(remoteTokens).length > 0) {
+      return remoteTokens;
+    }
+  }
+
+  return {};
+}
+
+export async function getFontList(): Promise<string[]> {
+  if (CONTENT_SOURCE === "remote") {
+    const remoteFonts = await getRemoteFontList();
+    if (remoteFonts.length > 0) {
+      return remoteFonts;
+    }
+  }
+
+  const localFonts = extractFontList(siteData as unknown);
+  if (localFonts.length > 0) {
+    return localFonts;
+  }
+
+  if (ENABLE_REMOTE_FALLBACK) {
+    const remoteFonts = await getRemoteFontList();
+    if (remoteFonts.length > 0) {
+      return remoteFonts;
+    }
+  }
+
+  return [];
+}
+
+async function getRemoteTokens(): Promise<TokenMap> {
+  if (!TOKENS_URL) {
+    return {};
+  }
   const response = await fetch(TOKENS_URL, {
     cache: "no-store",
   });
@@ -324,11 +372,10 @@ export async function getTokens(): Promise<TokenMap> {
   return parseTokens(data);
 }
 
-export async function getFontList(): Promise<string[]> {
+async function getRemoteFontList(): Promise<string[]> {
   if (!TOKENS_URL) {
-    throw new Error("GOOGLE_SCRIPT_URL is not set. Cannot fetch font list.");
+    return [];
   }
-
   const response = await fetch(TOKENS_URL, {
     cache: "no-store",
   });

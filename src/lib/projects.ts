@@ -36,7 +36,7 @@ export function resolveProjectMediaSource(src: string): string {
     return value;
   }
 
-  const baseUrl = process.env.BUNNY_MEDIA_BASE_URL?.trim();
+  const baseUrl = process.env.BUNNY_MEDIA_BASE_URL?.trim() || process.env.NEXT_PUBLIC_MEDIA_BASE_URL?.trim();
   if (!baseUrl) {
     return value;
   }

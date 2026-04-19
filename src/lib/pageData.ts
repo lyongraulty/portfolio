@@ -1,6 +1,9 @@
 import { isLikelyVideoUrl, toCmsMediaUrl } from "@/lib/mediaUrl";
 
 export type PageData = Record<string, unknown>;
+
+/** Page 0 is the reel. Projects start at page 1 and increment from there. */
+export const REEL_PAGE_ID = 0;
 export type PageBlockData = Record<string, unknown>;
 export type PageMediaData = Record<string, unknown>;
 

@@ -132,10 +132,18 @@ export function SiteHeader() {
     window.requestAnimationFrame(tick);
   };
 
+  const mediaBase = process.env.NEXT_PUBLIC_MEDIA_BASE_URL ?? "";
+  const logoSrc = mediaBase ? `${mediaBase}/site/2019_Logo_BlackRing_NoBG_Large.png` : "";
+
   return (
     <header className="site-header" ref={headerRef}>
       <div className="site-header-backdrop" aria-hidden="true" />
       <Container className="site-header-inner">
+        {logoSrc ? (
+          <Link href="/" className="site-logo" aria-label="Lyon Graulty — home">
+            <img src={logoSrc} alt="Lyon Graulty" className="site-logo-img" />
+          </Link>
+        ) : null}
         <nav aria-label="Primary navigation">
           <ul className="site-nav-list type-nav">
             {navItems.map((item) => {

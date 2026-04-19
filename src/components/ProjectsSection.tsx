@@ -1,6 +1,6 @@
 import { ProjectCard } from "@/components/ProjectCard";
 import { Section } from "@/components/Section";
-import { getCardMediaFromBackground, getPageButtonText, getPageProjectCopy, getPageTitle, toPageNumber } from "@/lib/pageData";
+import { getCardMediaFromBackground, getPageButtonText, getPageProjectCopy, getPageTitle, toPageNumber, REEL_PAGE_ID } from "@/lib/pageData";
 import { getPages, type PageRow } from "../../fetch/getPages";
 
 function isRenderableProjectPage(page: PageRow): boolean {
@@ -15,7 +15,7 @@ export async function ProjectsSection() {
   const projectPages = pages
     .filter((page) => {
       const pageNumber = toPageNumber(page.page);
-      return pageNumber !== null && pageNumber > 1;
+      return pageNumber !== null && pageNumber > REEL_PAGE_ID;
     })
     .sort((a, b) => (toPageNumber(a.page) ?? Number.MAX_SAFE_INTEGER) - (toPageNumber(b.page) ?? Number.MAX_SAFE_INTEGER))
     .filter(isRenderableProjectPage);

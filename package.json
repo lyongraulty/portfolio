@@ -7,7 +7,10 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "sync:projects": "node scripts/sync-projects.mjs"
+    "sync:bunny-media": "node scripts/sync-bunny-media.mjs",
+    "sync:projects": "node scripts/sync-projects.mjs",
+    "sync:local-pages": "node scripts/sync-local-pages.mjs",
+    "validate:content": "node scripts/validate-content.mjs"
   },
   "dependencies": {
     "cloudinary": "^2.9.0",

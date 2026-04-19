@@ -4,7 +4,7 @@ import { isLikelyVideoUrl } from "@/lib/mediaUrl";
 import { getCardMediaFromBackground, getPageButtonText, getPageProjectCopy, getPageTitle } from "@/lib/pageData";
 import { getPages } from "../../fetch/getPages";
 
-function formatIndex(value: string | number | null | undefined): string {
+function formatIndex(value: unknown): string {
   const numeric = Number(value);
   if (!Number.isFinite(numeric)) {
     return "01";

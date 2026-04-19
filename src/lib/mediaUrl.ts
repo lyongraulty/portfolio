@@ -1,11 +1,30 @@
 const VIDEO_EXTENSION_RE = /\.(mp4|webm|ogg|ogv|mov|m4v)(?:$|[?#])/i;
 const VIDEO_FORMAT_RE = /^(mp4|webm|ogg|ogv|mov|m4v)$/i;
 const VIDEO_PATH_HINT_RE = /(^|\/)(video|videos)(\/|$)/i;
+const ABSOLUTE_URL_RE = /^[a-z][a-z0-9+.-]*:\/\//i;
+
+function trimTrailingSlash(value: string): string {
+  return value.replace(/\/+$/g, "");
+}
+
+function withMediaBaseIfRelative(raw: string): string {
+  if (!raw || ABSOLUTE_URL_RE.test(raw) || raw.startsWith("/")) {
+    return raw;
+  }
+
+  const base = (process.env.NEXT_PUBLIC_MEDIA_BASE_URL ?? process.env.BUNNY_MEDIA_BASE_URL ?? "").trim();
+  if (!base) {
+    return raw;
+  }
+
+  return `${trimTrailingSlash(base)}/${raw.replace(/^\/+/g, "")}`;
+}
 
 // CMS media URLs are source-of-truth values and must be used as-is.
 // Do not rewrite hostnames, prepend CDN bases, or normalize path segments.
 export function toCmsMediaUrl(value: unknown): string {
-  return typeof value === "string" ? value.trim() : "";
+  const raw = typeof value === "string" ? value.trim() : "";
+  return withMediaBaseIfRelative(raw);
 }
 
 export function toRenderableMediaUrl(value: unknown): string {
